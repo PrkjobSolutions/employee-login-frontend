@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Employee Login</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #002244;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      display: flex;
+    }
+
+    .left-image {
+      flex: 1;
+      background: url('left.jpg') no-repeat center center;
+      background-size: cover;
+    }
+
+    .login-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .login-form {
+      background-color: #e0f0ff;
+      padding: 40px;
+      border-radius: 20px;
+      width: 350px;
+    }
+
+    .login-form h2 {
+      margin-bottom: 20px;
+      color: #002244;
+    }
+
+    .login-form input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+    }
+
+    .login-form button {
+      width: 100%;
+      padding: 10px;
+      background-color: #002244;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    #error-msg {
+      color: red;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="left-image"></div>
+
+  <div class="login-box">
+    <form class="login-form" id="loginForm">
+      <h2>Employee Login</h2>
+      <div id="error-msg"></div>
+      <input type="text" name="id" placeholder="Employee ID" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+      <button type="button" onclick="window.location.href='admin-login.html'"
+        style="padding: 10px 20px; border-radius: 10px; background-color: #688db3; color: white; border: none; cursor: pointer; font-size: 14px; margin-top: 10px;">
+        Admin Login
+      </button>
+    </form>
+  </div>
+
+ <script>
+    const form = document.getElementById("loginForm");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const employee_id = form.querySelector('input[name="id"]').value;
+      const password = form.querySelector('input[name="password"]').value;
+
+      const response = await fetch("https://employee-login-backend-wusv.onrender.com/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ employee_id, password }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        localStorage.setItem("employee", JSON.stringify(data.employee));
+        window.location.href = "dashboard.html";
+      } else {
+        document.getElementById("error-msg").textContent = data.message || "Login failed";
+      }
+    });
+  </script>
+
+
+</body>
+</html>
