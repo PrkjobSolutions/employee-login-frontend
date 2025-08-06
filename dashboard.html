@@ -86,7 +86,7 @@
   document.addEventListener("DOMContentLoaded", async function () {
     try {
       // Fetch latest employee info
-     const response = await fetch(`https://employee-login-backend-wusv.onrender.com/api/employee/${emp.employee_id}`);
+     const response = await fetch(`https://employee-login-backend-vlfa.onrender.com/api/employee/${emp.employee_id}`);
       if (!response.ok) throw new Error("Failed to fetch employee");
 
       const updatedEmp = await response.json();
@@ -179,3 +179,4 @@
 
 </body>
 </html>
+
