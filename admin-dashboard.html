@@ -255,6 +255,7 @@
     <select id="eventType">
       <option value="birthday">Birthday</option>
       <option value="event">Event</option>
+      <option value="anniversary">Work Anniversary</option>
     </select><br><br>
 
     <button onclick="saveEvent()" style="border-radius: 25px;">Post Event</button>
@@ -299,10 +300,15 @@
 
     stored.forEach((event, index) => {
       const li = document.createElement("li");
+      let icon = "🏢";
+      if (event.type === "birthday") icon = "🎂";
+      else if (event.type === "anniversary") icon = "🎉";
+      
       li.innerHTML = `
-        ${event.name} – ${event.type === "birthday" ? "🎂" : "🏢"} ${formatDate(event.date)}
+        ${event.name} – ${icon} ${formatDate(event.date)}
         <button onclick="deleteEvent(${index})" style="margin-left: 10px; color: white; background: red; border: none; border-radius: 4px; padding: 3px 6px; cursor: pointer;">❌</button>
       `;
+
       eventList.appendChild(li);
     });
   }
@@ -591,6 +597,7 @@
   
 </body>
 </html>
+
 
 
 
