@@ -43,6 +43,8 @@
     <p><strong>Team:</strong> <span id="emp-team"></span></p>
     <p><strong>Grade:</strong> <span id="emp-grade"></span></p>
     <button id="policyBtn">View Company Policy</button>
+    <button id="holidayListBtn" style="margin-top: 10px;">📅 View Holiday List</button>
+
   </div>
 
   <div class="right-panel">
@@ -164,6 +166,12 @@
         w.document.write(`<iframe src="company-policy-2025.pdf" width="100%" height="100%"></iframe>`);
       };
 
+      document.getElementById("holidayListBtn").onclick = () => {
+        const w = window.open();
+        w.document.write(`<iframe src="holiday-list-2025.pdf" width="100%" height="100%"></iframe>`);
+      };
+
+
     } catch (err) {
       console.error("Error:", err);
       alert("Failed to load dashboard");
@@ -179,5 +187,4 @@
 
 </body>
 </html>
-
 
