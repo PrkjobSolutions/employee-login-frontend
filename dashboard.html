@@ -122,25 +122,33 @@
       });
       calendar.render();
 
-      // Event list
+     // Event list
       const listContainer = document.querySelector("#eventListBox .event-list");
       listContainer.innerHTML = "";
+      
       const events = JSON.parse(localStorage.getItem("upcomingEvents")) || [];
+      
       if (events.length === 0) {
         listContainer.innerHTML = "<div>No upcoming events posted.</div>";
       } else {
         events.forEach(event => {
           const div = document.createElement("div");
           div.className = `event-item ${event.type}`;
-          div.innerHTML = `<strong>${event.name}</strong> – ${event.type === "birthday" ? "🎂" : "🏢"} ${formatDate(event.date)}`;
+      
+          let label = "Event 🏢";
+          if (event.type === "birthday") label = "Birthday 🎂";
+          else if (event.type === "anniversary") label = "Work Anniversary 🎉";
+      
+          div.innerHTML = `<strong>${event.name}</strong> – ${label} ${formatDate(event.date)}`;
           listContainer.appendChild(div);
         });
       }
-
+      
       function formatDate(dateStr) {
         const options = { day: "2-digit", month: "short", year: "numeric" };
         return new Date(dateStr).toLocaleDateString("en-IN", options);
       }
+
 
       // Pending documents
       const pending = localStorage.getItem("pendingDocs_" + updatedEmp.employee_id);
@@ -187,4 +195,5 @@
 
 </body>
 </html>
+
 
