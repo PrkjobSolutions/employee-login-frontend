@@ -587,7 +587,52 @@
   });
 </script>
 
+<script>
+  document.getElementById("toggle-password-btn").addEventListener("click", () => {
+    const box = document.getElementById("change-password-box");
+    box.style.display = box.style.display === "none" ? "block" : "none";
+  });
 
+  document.getElementById("toggle-pass-visibility").addEventListener("change", function () {
+    const passInput = document.getElementById("new-admin-password");
+    passInput.type = this.checked ? "text" : "password";
+  });
+
+  document.getElementById("save-admin-password").addEventListener("click", async () => {
+    const newPassword = document.getElementById("new-admin-password").value.trim();
+
+    if (!newPassword) {
+      return alert("Please enter a new password.");
+    }
+
+    try {
+      const response = await fetch("https://employee-login-backend-vlfa.onrender.com/admin/password", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ newPassword })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert("Password updated successfully!");
+        document.getElementById("new-admin-password").value = "";
+        document.getElementById("change-password-box").style.display = "none";
+      } else {
+        alert("Failed to update password: " + (data.error || "Unknown error"));
+      }
+
+    } catch (err) {
+      console.error("Fetch error:", err);
+      alert("Something went wrong while updating the password.");
+    }
+  });
+</script>
+
+  
 </body>
 </html>
+
 
