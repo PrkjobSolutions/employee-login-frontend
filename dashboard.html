@@ -111,7 +111,8 @@
       document.getElementById("emp-designation").textContent = updatedEmp.designation;
       document.getElementById("emp-team").textContent = updatedEmp.team;
       document.getElementById("emp-grade").textContent = updatedEmp.grade;
-      document.getElementById("profile-pic").src = updatedEmp.profileImage || "images/default.jpg";
+      document.getElementById("profile-pic").src = updatedEmp.profileImage || "https://via.placeholder.com/120";
+
 
       // Leave summary
       const summary = JSON.parse(localStorage.getItem("leaveSummary_" + updatedEmp.employee_id)) || {};
@@ -196,6 +197,7 @@
 
 </body>
 </html>
+
 
 
 
