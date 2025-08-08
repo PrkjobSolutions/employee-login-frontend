@@ -111,7 +111,9 @@
       document.getElementById("emp-designation").textContent = updatedEmp.designation;
       document.getElementById("emp-team").textContent = updatedEmp.team;
       document.getElementById("emp-grade").textContent = updatedEmp.grade;
-      document.getElementById("profile-pic").src = updatedEmp.profileImage || "https://via.placeholder.com/120";
+      const imgUrl = updatedEmp.profileImage && updatedEmp.profileImage.trim() !== "" ? updatedEmp.profileImage : "https://via.placeholder.com/120";
+      document.getElementById("profile-pic").src = imgUrl;
+
 
 
       // Leave summary
@@ -197,6 +199,7 @@
 
 </body>
 </html>
+
 
 
 
