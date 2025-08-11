@@ -177,16 +177,7 @@
     <input type="text" id="team" placeholder="Team">
     <input type="text" id="grade" placeholder="Grade">
 
-    <div style="margin-top: 20px; text-align: center;">
-      <label for="profileImageInput" style="cursor: pointer; color: #007bff; text-decoration: underline;">
-        Upload Profile Image
-      </label>
-      <input type="file" id="profileImageInput" accept="image/*" style="display: none;" />
-    </div>
-
-    <!-- Hidden input to store base64 image string -->
-    <input type="hidden" id="profileImage" />
-
+    <input type="text" id="profileImage" placeholder="Profile Image URL (optional)">
     <br>
     <button onclick="saveEmployee()">Save Employee</button>
     <button onclick="resetForm()">Clear</button>
@@ -338,34 +329,9 @@
 
   // Load employees on page load
   document.addEventListener("DOMContentLoaded", fetchEmployees);
-
-  // Handle image file input and convert to base64 string
-  document.getElementById('profileImageInput').addEventListener('change', function(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file.');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const base64Image = e.target.result;
-
-      // Save base64 string into hidden input
-      document.getElementById('profileImage').value = base64Image;
-
-      alert('Profile image loaded. Now click Save Employee.');
-    };
-    reader.readAsDataURL(file);
-  });
-
-  // Optional: Go back button functionality (add this function if you want the back button to work)
-  function goBack() {
-    window.history.back();
-  }
 </script>
 
 </body>
 </html>
+
+
