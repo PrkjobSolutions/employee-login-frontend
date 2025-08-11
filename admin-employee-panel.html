@@ -278,53 +278,51 @@
   async function saveEmployee() {
     const id = document.getElementById("employeeId").value;
 
-    // Get file from input
-    const fileInput = document.getElementById("profileImageFile");
-    let imageUrl = document.getElementById("profileImage").value; // existing URL (if any)
+    // Prepare form data (multipart/form-data)
+    const formData = new FormData();
 
-    // If a new file is selected, upload it
+    formData.append("name", document.getElementById("name").value);
+    formData.append("employee_id", document.getElementById("employee_id").value);
+    formData.append("designation", document.getElementById("designation").value);
+    formData.append("dob", document.getElementById("dob").value);
+    formData.append("joining_date", document.getElementById("joining_date").value);
+    formData.append("payroll_name", document.getElementById("payroll_name").value);
+    formData.append("team", document.getElementById("team").value);
+    formData.append("grade", document.getElementById("grade").value);
+    formData.append("password", document.getElementById("password").value);
+
+    const fileInput = document.getElementById("profileImageFile");
     if (fileInput.files.length > 0) {
-      const uploadedUrl = await uploadProfileImage(fileInput.files[0]);
-      if (uploadedUrl) {
-        imageUrl = uploadedUrl;
-        // Set hidden field for later reference
-        document.getElementById("profileImage").value = imageUrl;
-      }
+      formData.append("profileimage", fileInput.files[0]);
     }
 
-    const data = {
-      name: document.getElementById("name").value,
-      employee_id: document.getElementById("employee_id").value,
-      designation: document.getElementById("designation").value,
-      dob: document.getElementById("dob").value,
-      joining_date: document.getElementById("joining_date").value,
-      payroll_name: document.getElementById("payroll_name").value,
-      team: document.getElementById("team").value,
-      grade: document.getElementById("grade").value,
-      profileImage: imageUrl,
-      password: document.getElementById("password").value
-    };
+    let url = "/employees";
+    let method = "POST";
+    if (id) {
+      url = `/employees/${id}`;
+      method = "PUT";
+    }
 
-    const method = id ? "PUT" : "POST";
-    const url = id ? `${API_URL}/${id}` : API_URL;
+    try {
+      const response = await fetch(url, {
+        method,
+        body: formData, // sending FormData with file included
+      });
 
-    fetch(url, {
-      method,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data)
-    })
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to save employee");
-        return res.json();
-      })
-      .then(() => {
-        fetchEmployees();
-        resetForm();
-        // clear file input
-        fileInput.value = "";
-      })
-      .catch(err => alert(err.message));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to save employee");
+      }
+
+      // Clear form and refresh table after save
+      resetForm();
+      fetchEmployees();
+
+    } catch (error) {
+      alert(error.message);
+    }
   }
+
 
 
   // Delete employee
