@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+<!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<!-- jQuery (required by Select2) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<style>
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background-color: #f2f4f8;
+    margin: 0;
+    padding: 0;
+  }
+
+  .header {
+    background-color: #0a1f47;
+    color: white;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  }
+
+  .container {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 30px;
+  }
+
+  .section {
+    background-color: white;
+    padding: 25px;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease-in-out;
+  }
+
+  .section:hover {
+    transform: translateY(-3px);
+  }
+
+  .section h2 {
+    margin-top: 0;
+    color: #333;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+
+  .section input[type="text"],
+  .section input[type="number"],
+  .section input[type="date"],
+  .section input[type="password"],
+  .section textarea,
+  .section select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    margin-bottom: 15px;
+    transition: 0.2s border-color ease;
+  }
+
+  .section input:focus,
+  .section select:focus,
+  .section textarea:focus {
+    outline: none;
+    border-color: #1e1d6b;
+    box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.1);
+  }
+
+  .section button {
+    padding: 10px 20px;
+    background-color: #74adbb;
+    color: white;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    font-weight: 500;
+  }
+
+  .section button:hover {
+    background-color: #429fb6;
+  }
+
+  #toggle-password-btn {
+    background-color: #74adbb;
+  }
+
+  #toggle-password-btn:hover {
+    background-color: #74adbb;
+  }
+
+  #save-admin-password {
+    background-color: #43a047;
+  }
+
+  #save-admin-password:hover {
+    background-color: #388e3c;
+  }
+
+  #edit-headcount-btn {
+    background-color: #566483;
+    color: white;
+  }
+
+  #edit-headcount-btn:hover {
+    background-color: #647eb8;
+  }
+
+  #eventList li {
+    background-color: #e8f0fe;
+    padding: 8px 12px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    color: #333;
+  }
+
+  label {
+    font-weight: 500;
+  }
+
+  .select2-container--default .select2-selection--single {
+    height: 40px;
+    border-radius: 10px;
+    border-color: #ccc;
+    padding: 6px 12px;
+  }
+
+  .select2-selection__rendered {
+    line-height: 26px;
+  }
+
+  .select2-selection__arrow {
+    height: 36px;
+  }
+
+  #pending-doc-text {
+    width: 100%;
+    max-width: 500px;
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    font-size: 14px;
+    resize: vertical;
+    box-sizing: border-box; /* 🔑 This keeps padding from making it overflow */
+    margin-right: auto;     /* Helps it stay aligned and not push to edge */
+  }
+
+
+</style>
+
+</head>
+<body>
+    <button onclick="logout()" style="position: absolute; top: 20px; right: 20px; padding: 8px 12px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">
+    Logout
+    </button>
+
+  <div class="header">
+    <h1>Admin Dashboard</h1>
+  </div>
+
+  <div class="container">
+    <div class="section">
+      <h2>Welcome, Aayushi </h2>
+      <p>This is your dashboard to manage employee information.</p>
+
+      <div id="headcount-box" style="margin-top: 10px;">
+        <strong>Total Headcount:</strong>
+        <span id="headcount-value">--</span>
+        <button id="edit-headcount-btn" style="margin-left: 10px; border-radius: 25px;">Edit</button>
+      </div>
+        <button onclick="window.location.href='admin-leave.html'" style="margin-top: 10px; border-radius: 25px;">
+          🗓️ Go to Leave Calendar
+        </button>
+        <button onclick="window.location.href='admin-employee-panel.html'" style="margin-top: 10px; border-radius: 25px; margin-left: 10px;">
+          ➕ Add Employee Panel
+        </button>
+
+        <button id="toggle-password-btn" style="margin-top: 10px; border-radius: 25px; margin-left: 10px;">
+          🔒 Change Password
+        </button>
+
+       <div id="change-password-box" style="display: none; margin-top: 10px;">
+          <input type="password" id="new-admin-password" placeholder="Enter new password" style="padding: 6px; border-radius: 10px; border: 1px solid #ccc;" />
+          <br><br>
+          <label>
+            <input type="checkbox" id="toggle-pass-visibility" />
+            Show Password
+          </label>
+          <br><br>
+          <button id="save-admin-password" style="margin-left: 0; border-radius: 10px;">Save</button>
+        </div>
+
+
+
+
+    </div>
+    
+
+    <div class="section">
+      <h2>Leave Summary Editor</h2>
+      <label for="employee-select">Select Employee:</label>
+      <select id="employee-select" class="select2">
+        <option disabled selected>Loading employees...</option>
+      </select>
+
+      <br><br>
+
+      <label>PL:</label> <input type="number" id="pl" value="0"><br>
+      <label>CL:</label> <input type="number" id="cl" value="0"><br>
+      <label>SL:</label> <input type="number" id="sl" value="0"><br>
+      <label>EL:</label> <input type="number" id="el" value="0"><br>
+
+      <button id="saveLeaveSummary" style="border-radius: 25px;">Save Summary</button>
+    </div>
+    <div class="section">
+    <h2>Upload Employee Documents</h2>
+    <label for="doc-employee"><strong>Select Employee:</strong></label>
+   <select id="doc-employee" class="select2">
+      <option disabled selected>Loading employees...</option>
+    </select>
+
+    <br><br>
+
+    <label>Offer Letter (PDF):</label><br>
+    <input type="file" id="offerLetter" accept="application/pdf"><br><br>
+
+    <label>Salary Slip (PDF):</label><br>
+    <input type="file" id="salarySlip" accept="application/pdf"><br><br>
+
+    <button onclick="saveDocuments()" style="border-radius: 25px;">Save Documents</button>
+  </div>
+
+  <div class="section">
+    <h2>Post Events / Birthdays</h2>
+    <label><strong>Event Name:</strong></label>
+    <input type="text" id="eventName" placeholder="e.g. John Doe / Team Outing"><br><br>
+
+    <label><strong>Date:</strong></label>
+    <input type="date" id="eventDate"><br><br>
+
+    <label><strong>Type:</strong></label>
+   <select id="eventType">
+    <option value="birthday">Birthday</option>
+    <option value="event">Event</option>
+    <option value="anniversary">Work Anniversary</option>
+  </select>
+<br><br>
+
+    <button onclick="saveEvent()" style="border-radius: 25px;">Post Event</button>
+
+    <hr>
+
+    <h3>Upcoming Events</h3>
+    <ul id="eventList" style="list-style-type:none; padding:0;"></ul>
+  </div>
+  <div class="section">
+    <h2>Document Pending Section</h2>
+
+    <label for="pending-employee"><strong>Select Employee:</strong></label>
+    <select id="pending-employee" class="select2">
+      <option disabled selected>Loading employees...</option>
+    </select>
+
+    <br><br>
+
+    <label for="pending-doc-text"><strong>Pending Documents:</strong></label><br>
+    <textarea id="pending-doc-text" rows="4" cols="50" placeholder="e.g. Aadhar card, PAN card, Degree Certificate..."></textarea>
+
+    <br><br>
+    <button onclick="savePendingDocs()" style="border-radius: 25px;">Save Pending Docs</button>
+  </div>
+  </div>
+
+
+<script>
+  function loadEvents() {
+    const eventList = document.getElementById("eventList");
+    const stored = JSON.parse(localStorage.getItem("upcomingEvents")) || [];
+
+    eventList.innerHTML = "";
+
+    if (stored.length === 0) {
+      eventList.innerHTML = "<li>No events posted yet.</li>";
+      return;
+    }
+
+    stored.forEach((event, index) => {
+      let label = "Event 🏢";
+      if (event.type === "birthday") label = "Birthday 🎂";
+      else if (event.type === "anniversary") label = "Work Anniversary 🎉";
+
+      const li = document.createElement("li");
+      li.innerHTML = `
+        <strong>${event.name}</strong> – ${label} ${formatDate(event.date)}
+        <button onclick="deleteEvent(${index})"
+          style="margin-left: 10px; color: white; background: red; border: none; border-radius: 4px; padding: 3px 6px; cursor: pointer;">
+          ❌
+        </button>
+      `;
+      eventList.appendChild(li);
+    });
+  }
+
+  function saveEvent() {
+    const name = document.getElementById("eventName").value.trim();
+    const date = document.getElementById("eventDate").value;
+    const type = document.getElementById("eventType").value;
+
+    if (!name || !date) {
+      alert("Please enter both event name and date.");
+      return;
+    }
+
+    const newEvent = { name, date, type };
+    const stored = JSON.parse(localStorage.getItem("upcomingEvents")) || [];
+    stored.push(newEvent);
+    localStorage.setItem("upcomingEvents", JSON.stringify(stored));
+
+    document.getElementById("eventName").value = "";
+    document.getElementById("eventDate").value = "";
+    document.getElementById("eventType").value = "birthday";
+
+    loadEvents();
+  }
+
+  function deleteEvent(index) {
+    const stored = JSON.parse(localStorage.getItem("upcomingEvents")) || [];
+    stored.splice(index, 1);
+    localStorage.setItem("upcomingEvents", JSON.stringify(stored));
+    loadEvents();
+  }
+
+  function formatDate(dateStr) {
+    const options = { day: "2-digit", month: "short", year: "numeric" };
+    return new Date(dateStr).toLocaleDateString("en-IN", options);
+  }
+
+  document.addEventListener("DOMContentLoaded", loadEvents);
+</script>
+
+
+  <script>
+    if (localStorage.getItem("adminLoggedIn") !== "true") {
+        window.location.href = "admin-login.html";
+    }
+
+    function logout() {
+        localStorage.removeItem("adminLoggedIn");
+        window.location.href = "admin-login.html";
+    }
+
+    const saveBtn = document.getElementById("saveLeaveSummary");
+    const employeeSelect = document.getElementById("employee-select");
+
+    saveBtn.onclick = function () {
+      const empId = employeeSelect.options[employeeSelect.selectedIndex].getAttribute("data-emp-code");
+      const updated = {
+        PL: parseInt(document.getElementById("pl").value),
+        CL: parseInt(document.getElementById("cl").value),
+        SL: parseInt(document.getElementById("sl").value),
+        EL: parseInt(document.getElementById("el").value)
+      };
+
+      localStorage.setItem("leaveSummary_" + empId, JSON.stringify(updated));
+      alert("Leave summary saved for Employee " + empId);
+    };
+  </script>
+  <script>
+    function saveDocuments() {
+     const empSelect = document.getElementById("doc-employee");
+     const empId = empSelect.options[empSelect.selectedIndex].getAttribute("data-emp-code");
+
+      const offerFile = document.getElementById("offerLetter").files[0];
+      const salaryFile = document.getElementById("salarySlip").files[0];
+
+      if (!offerFile || !salaryFile) {
+        alert("Please select both Offer Letter and Salary Slip.");
+        return;
+      }
+
+      const reader1 = new FileReader();
+      const reader2 = new FileReader();
+
+      reader1.onload = function () {
+        const offerBase64 = reader1.result;
+
+        reader2.onload = function () {
+          const salaryBase64 = reader2.result;
+
+          const docData = {
+            offerLetter: offerBase64,
+            salarySlip: salaryBase64
+          };
+
+          localStorage.setItem("documents_emp" + empId, JSON.stringify(docData));
+          alert("Documents saved successfully for Employee " + empId);
+          document.getElementById("offerLetter").value = "";
+          document.getElementById("salarySlip").value = "";
+        };
+
+        reader2.readAsDataURL(salaryFile);
+      };
+
+      reader1.readAsDataURL(offerFile);
+    }
+  </script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const headcountBox = document.getElementById("headcount-box");
+    const valueSpan = document.getElementById("headcount-value");
+    const editBtn = document.getElementById("edit-headcount-btn");
+
+    // Load initial value
+    let count = localStorage.getItem("totalHeadcount") || "0";
+    valueSpan.textContent = count;
+
+    editBtn.addEventListener("click", function () {
+      // Replace span and button with input + update
+      headcountBox.innerHTML = `
+        <strong>Total Headcount:</strong>
+        <input type="number" id="headcount-input" value="${count}" style="width: 60px; margin-left: 5px;" />
+        <button id="update-headcount-btn" style="margin-left: 5px;">Update</button>
+      `;
+
+      document.getElementById("update-headcount-btn").addEventListener("click", function () {
+        const inputVal = document.getElementById("headcount-input").value;
+        localStorage.setItem("totalHeadcount", inputVal);
+        count = inputVal;
+
+        // Re-render to show updated value
+        headcountBox.innerHTML = `
+          <strong>Total Headcount:</strong>
+          <span id="headcount-value">${count}</span>
+          <button id="edit-headcount-btn" style="margin-left: 10px;">Edit</button>
+        `;
+
+        // Re-bind the edit button event
+        document.getElementById("edit-headcount-btn").addEventListener("click", arguments.callee);
+      });
+    });
+  });
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    fetch("https://employee-login-backend-vlfa.onrender.com/employees")
+      .then(response => response.json())
+      .then(data => {
+        const empSelect = document.getElementById("employee-select");
+        const docEmpSelect = document.getElementById("doc-employee");
+
+        empSelect.innerHTML = "";
+        docEmpSelect.innerHTML = "";
+
+        data.forEach(emp => {
+          const option1 = document.createElement("option");
+          option1.value = emp.id;
+          option1.setAttribute("data-emp-code", emp.employee_id);  // ✅ Add this line
+          option1.textContent = emp.name;
+
+          const option2 = option1.cloneNode(true);
+
+          empSelect.appendChild(option1);
+          docEmpSelect.appendChild(option2);
+        });
+      })
+      .catch(error => {
+        console.error("Error fetching employees:", error);
+      });
+  });
+</script>
+
+<script>
+  const empId = emp.employee_id;
+
+  document.getElementById("offerBtn").onclick = function () {
+    const docs = JSON.parse(localStorage.getItem("documents_emp" + empId));
+    if (!docs || !docs.offerLetter) {
+      alert("No Offer Letter uploaded.");
+      return;
+    }
+
+    const newWindow = window.open();
+    newWindow.document.write(`<iframe src="${docs.offerLetter}" width="100%" height="100%"></iframe>`);
+  };
+
+  document.getElementById("salaryBtn").onclick = function () {
+    const docs = JSON.parse(localStorage.getItem("documents_emp" + empId));
+    if (!docs || !docs.salarySlip) {
+      alert("No Salary Slip uploaded.");
+      return;
+    }
+
+    const newWindow = window.open();
+    newWindow.document.write(`<iframe src="${docs.salarySlip}" width="100%" height="100%"></iframe>`);
+  };
+</script>
+<script>
+  // Populate the new "Pending Docs" dropdown
+  document.addEventListener("DOMContentLoaded", function () {
+   fetch("https://employee-login-backend-vlfa.onrender.com/employees")
+      .then(res => res.json())
+      .then(data => {
+        const pendingSelect = document.getElementById("pending-employee");
+        pendingSelect.innerHTML = "";
+        data.forEach(emp => {
+          const opt = document.createElement("option");
+          opt.value = emp.employee_id; // Use employee_id for saving
+          opt.textContent = emp.name;
+          pendingSelect.appendChild(opt);
+        });
+      });
+  });
+
+  // Save pending docs to localStorage
+  function savePendingDocs() {
+    const empId = document.getElementById("pending-employee").value;
+    const message = document.getElementById("pending-doc-text").value.trim();
+
+    if (!message) {
+      alert("Please enter pending document note.");
+      return;
+    }
+
+    localStorage.setItem("pendingDocs_" + empId, message);
+    alert("✅ Pending documents saved for employee " + empId);
+    document.getElementById("pending-doc-text").value = "";
+  }
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    $('.select2').select2();
+  });
+</script>
+
+<script>
+  // Toggle show/hide of password input
+  document.getElementById("toggle-password-btn").addEventListener("click", function () {
+    const box = document.getElementById("change-password-box");
+    box.style.display = box.style.display === "none" ? "block" : "none";
+  });
+</script>
+
+
+<script>
+  document.getElementById("toggle-pass-visibility").addEventListener("change", function () {
+    const input = document.getElementById("new-admin-password");
+    input.type = this.checked ? "text" : "password";
+  });
+</script>
+
+
+<script>
+  document.getElementById("save-admin-password").addEventListener("click", async () => {
+    const newPassword = document.getElementById("new-admin-password").value.trim();
+
+    if (!newPassword) {
+      alert("Please enter a new password.");
+      return;
+    }
+
+    try {
+      const response = await fetch("https://employee-login-backend-vlfa.onrender.com/admin/password", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert("✅ Password updated successfully!");
+        document.getElementById("new-admin-password").value = "";
+        document.getElementById("change-password-box").style.display = "none";
+      } else {
+        alert("❌ Failed to update password.");
+      }
+    } catch (error) {
+      console.error("Password update error:", error);
+      alert("Error updating password. See console.");
+    }
+  });
+</script>
+
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
