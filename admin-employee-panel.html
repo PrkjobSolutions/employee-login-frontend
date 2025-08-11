@@ -177,12 +177,7 @@
     <input type="text" id="team" placeholder="Team">
     <input type="text" id="grade" placeholder="Grade">
 
-    <label for="profileImageFile">Upload Profile Image:</label>
-    <input type="file" id="profileImageFile" accept="image/*">
-    <br>
-    <!-- keep the hidden URL field for saving the URL -->
-    <input type="hidden" id="profileImage">
-
+    <input type="text" id="profileImage" placeholder="Profile Image URL (optional)">
     <br>
     <button onclick="saveEmployee()">Save Employee</button>
     <button onclick="resetForm()">Clear</button>
@@ -267,63 +262,44 @@
         document.getElementById("grade").value = emp.grade || "";
         document.getElementById("profileImage").value = emp.profileImage || "";
         document.getElementById("password").value = ""; // Keep empty for security
-        document.getElementById("profileImage").value = emp.profileImage || "";
-// Optionally display current image preview somewhere on your form
-
       })
       .catch(err => alert(err.message));
   }
 
   // Save new or edited employee
-  async function saveEmployee() {
+  function saveEmployee() {
     const id = document.getElementById("employeeId").value;
+    const data = {
+      name: document.getElementById("name").value,
+      employee_id: document.getElementById("employee_id").value,
+      designation: document.getElementById("designation").value,
+      dob: document.getElementById("dob").value,
+      joining_date: document.getElementById("joining_date").value,
+      payroll_name: document.getElementById("payroll_name").value,
+      team: document.getElementById("team").value,
+      grade: document.getElementById("grade").value,
+      profileImage: document.getElementById("profileImage").value,
+      password: document.getElementById("password").value
+    };
 
-    // Prepare form data (multipart/form-data)
-    const formData = new FormData();
+    const method = id ? "PUT" : "POST";
+    const url = id ? `${API_URL}/${id}` : API_URL;
 
-    formData.append("name", document.getElementById("name").value);
-    formData.append("employee_id", document.getElementById("employee_id").value);
-    formData.append("designation", document.getElementById("designation").value);
-    formData.append("dob", document.getElementById("dob").value);
-    formData.append("joining_date", document.getElementById("joining_date").value);
-    formData.append("payroll_name", document.getElementById("payroll_name").value);
-    formData.append("team", document.getElementById("team").value);
-    formData.append("grade", document.getElementById("grade").value);
-    formData.append("password", document.getElementById("password").value);
-
-    const fileInput = document.getElementById("profileImageFile");
-    if (fileInput.files.length > 0) {
-      formData.append("profileimage", fileInput.files[0]);
-    }
-
-    let url = "/employees";
-    let method = "POST";
-    if (id) {
-      url = `/employees/${id}`;
-      method = "PUT";
-    }
-
-    try {
-      const response = await fetch(url, {
-        method,
-        body: formData, // sending FormData with file included
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Failed to save employee");
-      }
-
-      // Clear form and refresh table after save
-      resetForm();
-      fetchEmployees();
-
-    } catch (error) {
-      alert(error.message);
-    }
+    fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to save employee");
+        return res.json();
+      })
+      .then(() => {
+        fetchEmployees();
+        resetForm();
+      })
+      .catch(err => alert(err.message));
   }
-
-
 
   // Delete employee
   function deleteEmployee(id) {
@@ -353,35 +329,6 @@
 
   // Load employees on page load
   document.addEventListener("DOMContentLoaded", fetchEmployees);
-
-    async function uploadProfileImage(file) {
-    if (!file) return null;
-
-    const formData = new FormData();
-    formData.append('profileimage', file);
-
-    try {
-      const employeeId = document.getElementById("employee_id").value;
-      if (!employeeId) {
-        alert("Please enter Employee ID before uploading an image.");
-        return null;
-      }
-
-      const res = await fetch(`https://employee-login-backend-vlfa.onrender.com/api/upload-profile-image/${employeeId}`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("Upload failed");
-
-      const data = await res.json();
-      return data.imageUrl; // URL from backend
-    } catch (err) {
-      alert("Image upload error: " + err.message);
-      return null;
-    }
-  }
-
 </script>
 
 </body>
