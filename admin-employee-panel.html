@@ -177,11 +177,7 @@
     <input type="text" id="team" placeholder="Team">
     <input type="text" id="grade" placeholder="Grade">
 
-    <label for="profileImageFile">Upload Profile Image</label>
-    <input type="file" id="profileImageFile" accept="image/*" />
-    <br>
-    <img id="profileImagePreview" src="" alt="Profile Image Preview" style="max-width: 150px; margin-top: 10px; display:none; border-radius: 10px; border: 1px solid #ccc;" />
-
+    <input type="text" id="profileImage" placeholder="Profile Image URL (optional)">
     <br>
     <button onclick="saveEmployee()">Save Employee</button>
     <button onclick="resetForm()">Clear</button>
@@ -204,189 +200,138 @@
     <tbody id="employeeTableBody"></tbody>
   </table>
 
-  <script>
-   const API_URL = "https://employee-login-backend-vlfa.onrender.com/employees";
+<script>
+  const API_URL = "https://employee-login-backend-vlfa.onrender.com/employees";
 
-    function fetchEmployees() {
-      fetch(API_URL)
-        .then(res => res.json())
-        .then(data => {
-          const tbody = document.getElementById("employeeTableBody");
-          tbody.innerHTML = "";
-          data.forEach(emp => {
-            const row = `
-              <tr>
-                <td>${emp.name}</td>
-                <td>${emp.employee_id}</td>
-                <td>${emp.designation}</td>
-                <td>${emp.dob || ""}</td>
-                <td>${emp.joining_date || ""}</td>
-                <td>${emp.team || ""}</td>
-                <td>${emp.grade || ""}</td>
-                <td>
-                  <button class="action-btn edit" onclick='editEmployee(${JSON.stringify(emp)})'>Edit</button>
-                  <button class="action-btn" onclick="deleteEmployee(${emp.id})">Delete</button>
-                </td>
-              </tr>
-            `;
+  // Format date as YYYY-MM-DD or empty string
+  function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    return d.toISOString().split('T')[0]; // YYYY-MM-DD
+  }
 
-            tbody.innerHTML += row;
-          });
-        });
-    }
-
-    async function saveEmployee() {
-      const id = document.getElementById("employeeId").value;
-
-      const fileInput = document.getElementById("profileImageFile");
-      let profileImageUrl = document.getElementById("profileImagePreview").src || "";
-
-      try {
-        if (fileInput.files.length > 0) {
-          if (!id) {
-            alert("Please save the employee first before uploading an image.");
-            return;
-          }
-          // Upload the new image file and get URL
-          profileImageUrl = await uploadProfileImage(document.getElementById("employee_id").value, fileInput.files[0]);
-          document.getElementById("profileImagePreview").src = profileImageUrl;
-          document.getElementById("profileImagePreview").style.display = "block";
-        }
-      } catch (err) {
-        alert("Image upload failed: " + err.message);
-        return;
-      }
-
-      const data = {
-        name: document.getElementById("name").value,
-        employee_id: document.getElementById("employee_id").value,
-        designation: document.getElementById("designation").value,
-        dob: document.getElementById("dob").value,
-        joining_date: document.getElementById("joining_date").value,
-        payroll_name: document.getElementById("payroll_name").value,
-        team: document.getElementById("team").value,
-        grade: document.getElementById("grade").value,
-        profileImage: profileImageUrl,
-        password: document.getElementById("password").value
-      };
-
-      const method = id ? "PUT" : "POST";
-      const url = id ? `${API_URL}/${id}` : API_URL;
-
-      fetch(url, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
+  // Fetch and render employee table
+  function fetchEmployees() {
+    fetch(API_URL)
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch employees");
+        return res.json();
       })
-      .then(res => res.json())
+      .then(data => {
+        console.log("Fetched from DB:", data);
+        const tbody = document.getElementById("employeeTableBody");
+        tbody.innerHTML = "";
+        data.forEach(emp => {
+          const row = `
+            <tr>
+              <td>${emp.name}</td>
+              <td>${emp.employee_id}</td>
+              <td>${emp.designation}</td>
+              <td>${formatDate(emp.dob)}</td>
+              <td>${formatDate(emp.joining_date)}</td>
+              <td>${emp.team || ""}</td>
+              <td>${emp.grade || ""}</td>
+              <td>
+                <button class="action-btn edit" onclick="editEmployee(${emp.id})">Edit</button>
+                <button class="action-btn" onclick="deleteEmployee(${emp.id})">Delete</button>
+              </td>
+            </tr>
+          `;
+          tbody.innerHTML += row;
+        });
+      })
+      .catch(err => alert(err.message));
+  }
+
+  // Fill form to edit employee
+  function editEmployee(id) {
+    fetch(`${API_URL}/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to fetch employee");
+        return res.json();
+      })
+      .then(emp => {
+        document.getElementById("employeeId").value = emp.id;
+        document.getElementById("name").value = emp.name;
+        document.getElementById("employee_id").value = emp.employee_id;
+        document.getElementById("designation").value = emp.designation;
+        document.getElementById("dob").value = emp.dob || "";
+        document.getElementById("joining_date").value = emp.joining_date || "";
+        document.getElementById("payroll_name").value = emp.payroll_name || "";
+        document.getElementById("team").value = emp.team || "";
+        document.getElementById("grade").value = emp.grade || "";
+        document.getElementById("profileImage").value = emp.profileImage || "";
+        document.getElementById("password").value = ""; // Keep empty for security
+      })
+      .catch(err => alert(err.message));
+  }
+
+  // Save new or edited employee
+  function saveEmployee() {
+    const id = document.getElementById("employeeId").value;
+    const data = {
+      name: document.getElementById("name").value,
+      employee_id: document.getElementById("employee_id").value,
+      designation: document.getElementById("designation").value,
+      dob: document.getElementById("dob").value,
+      joining_date: document.getElementById("joining_date").value,
+      payroll_name: document.getElementById("payroll_name").value,
+      team: document.getElementById("team").value,
+      grade: document.getElementById("grade").value,
+      profileImage: document.getElementById("profileImage").value,
+      password: document.getElementById("password").value
+    };
+
+    const method = id ? "PUT" : "POST";
+    const url = id ? `${API_URL}/${id}` : API_URL;
+
+    fetch(url, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data)
+    })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to save employee");
+        return res.json();
+      })
       .then(() => {
         fetchEmployees();
         resetForm();
-      });
-    }
+      })
+      .catch(err => alert(err.message));
+  }
 
+  // Delete employee
+  function deleteEmployee(id) {
+    if (!confirm("Are you sure you want to delete this employee?")) return;
+    fetch(`${API_URL}/${id}`, { method: "DELETE" })
+      .then(res => {
+        if (!res.ok) throw new Error("Failed to delete employee");
+        fetchEmployees();
+      })
+      .catch(err => alert(err.message));
+  }
 
-      function editEmployee(emp) {
-      document.getElementById("employeeId").value = emp.id;
-      document.getElementById("name").value = emp.name;
-      document.getElementById("designation").value = emp.designation;
-      document.getElementById("dob").value = emp.dob || "";
-      document.getElementById("joining_date").value = emp.joining_date || "";
-      document.getElementById("payroll_name").value = emp.payroll_name || "";
-      document.getElementById("team").value = emp.team || "";
-      document.getElementById("grade").value = emp.grade || "";
-      document.getElementById("password").value = emp.password || "";
-     if (emp.profileImage) {
-        document.getElementById("profileImagePreview").src = emp.profileImage;
-        document.getElementById("profileImagePreview").style.display = "block";
-      } else {
-        document.getElementById("profileImagePreview").style.display = "none";
-        document.getElementById("profileImagePreview").src = "";
-      }
-
-
-    }
-
-
-
-    function deleteEmployee(id) {
-      if (!confirm("Are you sure you want to delete this employee?")) return;
-      fetch(`${API_URL}/${id}`, { method: "DELETE" })
-        .then(() => fetchEmployees());
-    }
-
-
+  // Reset the employee form
   function resetForm() {
-      document.getElementById("employeeId").value = "";
-      document.getElementById("name").value = "";
-      document.getElementById("designation").value = "";
-      document.getElementById("dob").value = "";
-      document.getElementById("joining_date").value = "";
-      document.getElementById("payroll_name").value = "";
-      document.getElementById("team").value = "";
-      document.getElementById("grade").value = "";
-      document.getElementById("profileImagePreview").src = "";
-      document.getElementById("profileImagePreview").style.display = "none";
-      document.getElementById("password").value = "";
-    }
-
-
-
-
-    window.onload = fetchEmployees;
-  </script>
-<script>
-function fetchEmployees() {
-  fetch(API_URL)
-    .then(res => res.json())
-    .then(data => {
-      console.log("Fetched from DB:", data);  // 👈 ADD THIS LINE
-      const tbody = document.getElementById("employeeTableBody");
-      tbody.innerHTML = "";
-      data.forEach(emp => {
-        const row = `
-          <tr>
-            <td>${emp.name}</td>
-            <td>${emp.employee_id}</td>
-            <td>${emp.designation}</td>
-            <td>${emp.dob || ""}</td>
-            <td>${emp.joining_date || ""}</td>
-            <td>${emp.team || ""}</td>
-            <td>${emp.grade || ""}</td>
-            <td>
-              <button class="action-btn edit" onclick='editEmployee(${JSON.stringify(emp)})'>Edit</button>
-              <button class="action-btn" onclick="deleteEmployee(${emp.id})">Delete</button>
-            </td>
-          </tr>
-        `;
-        tbody.innerHTML += row;
-      });
-    });
-}
-</script>
-<script>
-  function goBack() {
-    window.location.href = "admin-dashboard.html";
-  }
-</script>
-<script>
-  async function uploadProfileImage(employee_id, file) {
-    const formData = new FormData();
-    formData.append('profileimage', file);
-
-    const res = await fetch(`https://employee-login-backend-vlfa.onrender.com/api/upload-profile-image/${employee_id}`, {
-      method: 'POST',
-      body: formData,
-    });
-    
-    const data = await res.json();
-    if (res.ok && data.success) {
-      return data.imageUrl;
-    } else {
-      throw new Error(data.error || 'Upload failed');
-    }
+    document.getElementById("employeeId").value = "";
+    document.getElementById("name").value = "";
+    document.getElementById("employee_id").value = "";
+    document.getElementById("designation").value = "";
+    document.getElementById("dob").value = "";
+    document.getElementById("joining_date").value = "";
+    document.getElementById("payroll_name").value = "";
+    document.getElementById("team").value = "";
+    document.getElementById("grade").value = "";
+    document.getElementById("profileImage").value = "";
+    document.getElementById("password").value = "";
   }
 
+  // Load employees on page load
+  document.addEventListener("DOMContentLoaded", fetchEmployees);
 </script>
+
 </body>
 </html>
+
+
