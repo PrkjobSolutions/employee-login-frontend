@@ -295,15 +295,15 @@
       document.getElementById("payroll_name").value = emp.payroll_name || "";
       document.getElementById("team").value = emp.team || "";
       document.getElementById("grade").value = emp.grade || "";
-      document.getElementById("profileImage").value = emp.profileImage || "";
       document.getElementById("password").value = emp.password || "";
-      if (emp.profileimage) {
-      document.getElementById("profileImagePreview").src = emp.profileimage;
-      document.getElementById("profileImagePreview").style.display = "block";
-    } else {
-      document.getElementById("profileImagePreview").style.display = "none";
-      document.getElementById("profileImagePreview").src = "";
-    }
+     if (emp.profileImage) {
+        document.getElementById("profileImagePreview").src = emp.profileImage;
+        document.getElementById("profileImagePreview").style.display = "block";
+      } else {
+        document.getElementById("profileImagePreview").style.display = "none";
+        document.getElementById("profileImagePreview").src = "";
+      }
+
 
     }
 
@@ -325,7 +325,6 @@
       document.getElementById("payroll_name").value = "";
       document.getElementById("team").value = "";
       document.getElementById("grade").value = "";
-      document.getElementById("profileImage").value = "";
       document.getElementById("profileImagePreview").src = "";
       document.getElementById("profileImagePreview").style.display = "none";
       document.getElementById("password").value = "";
