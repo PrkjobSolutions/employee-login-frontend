@@ -138,8 +138,18 @@
     let calendar;
     let selectedDate = null;
 
-    function loadEmployeeLeaves(empId) {
-      const stored = localStorage.getItem("leaveEvents_" + empId);
+      function loadEmployeeLeaves(empId) {
+        fetch(`/leave-events/${empId}`)
+          .then(res => res.json())
+          .then(events => {
+            if (calendar) {
+              calendar.removeAllEvents();
+              events.forEach(event => calendar.addEvent(event));
+            }
+          })
+          .catch(err => console.error(err));
+      }
+
       const events = stored ? JSON.parse(stored) : [];
 
       if (calendar) {
@@ -179,34 +189,38 @@
       });
 
       // Save Leave
-      saveBtn.onclick = function () {
+     saveBtn.onclick = function () {
         const leaveType = leaveTypeSelect.value;
         const empId = employeeSelect.value;
-
+      
         const colorMap = {
           PL: "#007bff",
           CL: "#28a745",
           SL: "#dc3545",
           Absent: "#ffc107"
         };
-
+      
         if (selectedDate && leaveType) {
           const newLeave = {
+            employee_id: empId,
             title: leaveType + " Leave",
             date: selectedDate,
+            leave_type: leaveType,
             color: colorMap[leaveType]
           };
-
-          calendar.addEvent(newLeave);
-
-          const key = "leaveEvents_" + empId;
-          let stored = localStorage.getItem(key);
-          let events = stored ? JSON.parse(stored) : [];
-          events.push(newLeave);
-          localStorage.setItem(key, JSON.stringify(events));
-
-          modal.style.display = "none";
-          selectedDate = null;
+      
+          fetch('/leave-events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newLeave)
+          })
+          .then(res => res.json())
+          .then(() => {
+            calendar.addEvent(newLeave);
+            modal.style.display = "none";
+            selectedDate = null;
+          })
+          .catch(err => console.error(err));
         }
       };
 
@@ -251,4 +265,5 @@
 </script>
 </body>
 </html>
+
 
