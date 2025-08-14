@@ -132,157 +132,148 @@
   </div>
 
   <!-- FullCalendar Script -->
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
-    <script>
-    const BACKEND_URL = "https://employee-login-backend-vlfa.onrender.com";
-    </script>
-
-
-  <script>
-    let calendar;
-    let selectedDate = null;
-
-     function loadEmployeeLeaves(empId) {
-        fetch(`${BACKEND_URL}/leave-events/${empId}`)
-          .then(res => res.json())
-          .then(events => {
-            if (calendar) {
-              calendar.removeAllEvents();
-              events.forEach(event => {
-                calendar.addEvent({
-                  id: event.id,
-                  title: event.leave_type + " Leave",
-                  start: event.date,
-                  color: event.color
-                });
-              });
-            }
-          })
-          .catch(err => console.error(err));
-      }
-
-
-
-
-    document.addEventListener("DOMContentLoaded", function () {
-      const calendarEl = document.getElementById("calendar");
-      const employeeSelect = document.getElementById("employee-select");
-      const modal = document.getElementById("leaveModal");
-      const closeBtn = document.querySelector(".close");
-      const saveBtn = document.getElementById("saveLeave");
-      const leaveTypeSelect = document.getElementById("leaveType");
-      $("#employee-select").select2({
-        placeholder: "Select an employee",
-        width: "300px"
-      });
-
-      // Initialize calendar
-      calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: "dayGridMonth",
-        height: "auto",
-      dateClick: function (info) {
-        if (!employeeSelect.value) return alert("Select an employee first!");
-        selectedDate = info.dateStr;
-        modal.style.display = "block";
-      },
-
-        events: []
-      });
-
-      calendar.render();
-
-      // On employee change
-      employeeSelect.addEventListener("change", function () {
-        loadEmployeeLeaves(this.value);
-      });
-
-      // Save Leave
-     // Save Leave
-    saveBtn.onclick = function () {
-          const leaveType = leaveTypeSelect.value;
-          const empId = employeeSelect.value;
-        
-          const colorMap = {
-            PL: "#007bff",
-            CL: "#28a745",
-            SL: "#dc3545",
-            Absent: "#ffc107"
-          };
-        
-          if (selectedDate && leaveType) {
-            const newLeave = {
-              employee_id: empId,
-              date: selectedDate,
-              leave_type: leaveType,
-              color: colorMap[leaveType]
-            };
-        
-            fetch(`${BACKEND_URL}/leave-events`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(newLeave)
-            })
-            .then(res => {
-              if (!res.ok) throw new Error(`Server error: ${res.status}`);
-              return res.json();
-            })
-            .then(saved => {
-              calendar.addEvent({ 
-                id: saved.id, 
-                title: leaveType + " Leave", 
-                start: selectedDate, 
-                color: colorMap[leaveType] 
-              });
-              modal.style.display = 'none';
-              selectedDate = null;
-            })
-            .catch(err => console.error("Error saving leave:", err));
-          }  // ✅ properly close the if block here
-        };  // ✅ properly close the onclick function here
-
-
-      // Close modal
-      closeBtn.onclick = function () {
-        modal.style.display = "none";
-      };
-
-      window.onclick = function (event) {
-        if (event.target === modal) {
-          modal.style.display = "none";
-        }
-      };
-
-      // Fetch employee list from backend
-      fetch(`${BACKEND_URL}/employees`)
-
-        .then(response => response.json())
-        .then(data => {
-          employeeSelect.innerHTML = ""; // Clear default
-          data.forEach(emp => {
-            const option = document.createElement("option");
-            option.value = emp.employee_id;
-            option.textContent = emp.name;
-            employeeSelect.appendChild(option);
-          });
-
-          if (employeeSelect.options.length > 0) {
-            employeeSelect.selectedIndex = 0;
-            loadEmployeeLeaves(employeeSelect.value);
-          }
-        })
-        .catch(error => {
-          console.error("Error loading employee list:", error);
-        });
-    });
-  </script>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 <script>
-  function goBack() {
-  window.location.href = "admin-dashboard.html"; // or whatever your dashboard file is
+const BACKEND_URL = "https://employee-login-backend-vlfa.onrender.com";
+let calendar;
+let selectedDate = null;
+
+// Load leaves for selected employee
+function loadEmployeeLeaves(empId) {
+  fetch(`${BACKEND_URL}/leave-events/${empId}`)
+    .then(res => res.json())
+    .then(events => {
+      if (calendar) {
+        calendar.removeAllEvents();
+        events.forEach(event => {
+          calendar.addEvent({
+            id: event.id,
+            title: event.leave_type + " Leave",
+            start: event.date,
+            color: event.color
+          });
+        });
+      }
+    })
+    .catch(err => console.error(err));
 }
 
+document.addEventListener("DOMContentLoaded", function () {
+  const calendarEl = document.getElementById("calendar");
+  const employeeSelect = document.getElementById("employee-select");
+  const modal = document.getElementById("leaveModal");
+  const closeBtn = document.querySelector(".close");
+  const saveBtn = document.getElementById("saveLeave");
+  const leaveTypeSelect = document.getElementById("leaveType");
+
+  // Initialize Select2
+  $("#employee-select").select2({
+    placeholder: "Select an employee",
+    width: "300px"
+  });
+
+  // Initialize calendar
+  calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: "dayGridMonth",
+    height: "auto",
+    dateClick: function (info) {
+      if (!employeeSelect.value) return alert("Select an employee first!");
+      selectedDate = info.dateStr;
+      modal.style.display = "block";
+    },
+    events: []
+  });
+  calendar.render();
+
+  // Fetch employee list and populate dropdown
+  fetch(`${BACKEND_URL}/employees`)
+    .then(response => response.json())
+    .then(data => {
+      employeeSelect.innerHTML = "";
+      data.forEach(emp => {
+        const option = document.createElement("option");
+        option.value = emp.employee_id;
+        option.textContent = emp.name;
+        employeeSelect.appendChild(option);
+      });
+
+      // Set first employee as selected
+      if (data.length > 0) {
+        $("#employee-select").val(data[0].employee_id).trigger('change');
+        loadEmployeeLeaves(data[0].employee_id);
+      }
+    })
+    .catch(error => console.error("Error loading employee list:", error));
+
+  // Change employee
+  employeeSelect.addEventListener("change", function () {
+    loadEmployeeLeaves(this.value);
+  });
+
+  // Save Leave
+  saveBtn.onclick = function () {
+    const leaveType = leaveTypeSelect.value;
+    const empId = employeeSelect.value;
+
+    const colorMap = {
+      PL: "#007bff",
+      CL: "#28a745",
+      SL: "#dc3545",
+      Absent: "#ffc107"
+    };
+
+    if (selectedDate && leaveType) {
+      const newLeave = {
+        employee_id: empId,
+        date: selectedDate,
+        leave_type: leaveType,
+        color: colorMap[leaveType]
+      };
+
+      fetch(`${BACKEND_URL}/leave-events`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newLeave)
+      })
+      .then(res => {
+        if (!res.ok) throw new Error(`Server error: ${res.status}`);
+        return res.json();
+      })
+      .then(saved => {
+        calendar.addEvent({
+          id: saved.id,
+          title: leaveType + " Leave",
+          start: selectedDate,
+          color: colorMap[leaveType]
+        });
+        modal.style.display = 'none';
+        selectedDate = null;
+      })
+      .catch(err => console.error("Error saving leave:", err));
+    }
+  };
+
+  // Close modal
+  closeBtn.onclick = function () {
+    modal.style.display = "none";
+  };
+  window.onclick = function (event) {
+    if (event.target === modal) {
+      modal.style.display = "none";
+    }
+  };
+});
 </script>
+
+<script>
+function goBack() {
+  window.location.href = "admin-dashboard.html";
+}
+</script>
+
 </body>
 </html>
+
 
 
 
