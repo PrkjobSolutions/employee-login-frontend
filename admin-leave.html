@@ -4,46 +4,109 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Admin - Mark Leaves</title>
-
-  <!-- FullCalendar CSS -->
   <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css">
-  
-  <!-- Select2 CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-
   <style>
-    body { font-family: Arial, sans-serif; margin:0; background:#f5f7fa; }
-    .header { background:#002244; color:white; padding:15px; text-align:center; }
-    .container { padding:30px; max-width:1000px; margin:auto; }
-    #calendar { background:white; padding:20px; border-radius:10px; box-shadow:0 0 10px rgba(0,0,0,0.1); }
-    .fc { font-size:14px; }
-    .modal { display:none; position:fixed; z-index:999; padding-top:150px; left:0; top:0; width:100%; height:100%; background-color: rgba(0,0,0,0.4); }
-    .modal-content { background:white; margin:auto; padding:30px; border-radius:10px; width:300px; text-align:center; }
-    .close { float:right; font-size:22px; font-weight:bold; cursor:pointer; }
-    .select-employee { text-align:center; margin:20px 0; }
-    button.back-btn { position:absolute; top:25px; left:20px; width:55px; height:55px; background:#ffbb00; color:white; border:none; border-radius:50%; font-size:40px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-  </style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f5f7fa;
+    }
 
-  <!-- jQuery + Select2 JS -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-  <!-- FullCalendar JS -->
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    .header {
+      background-color: #002244;
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .container {
+      padding: 30px;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    #calendar {
+      background-color: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    .fc {
+      font-size: 14px;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 999;
+      padding-top: 150px;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: auto;
+      padding: 30px;
+      border-radius: 10px;
+      width: 300px;
+      text-align: center;
+    }
+
+    .close {
+      float: right;
+      font-size: 22px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .select-employee {
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+  </style>
+  <!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+<!-- jQuery + Select2 JS -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
 </head>
 <body>
 
   <div class="header">
     <h2>Admin Panel – Mark Leaves</h2>
   </div>
-
-  <button class="back-btn" onclick="goBack()">
+ <button onclick="goBack()" style="
+    position: absolute;
+    top: 25px;
+    left: 20px;
+    width: 55px;
+    height: 55px;
+    background-color: #ffbb00;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 40px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  ">
     <i class="fa-solid fa-arrow-left"></i>
   </button>
 
+
   <div class="select-employee">
     <label for="employee-select"><strong>Select Employee:</strong></label>
-    <select id="employee-select" style="width:300px;">
+    <select id="employee-select" style="width: 300px;">
       <option disabled selected>Loading employees...</option>
     </select>
   </div>
@@ -68,118 +131,146 @@
     </div>
   </div>
 
-<script>
-let calendar;
-let selectedDate = null;
-const BACKEND_URL = "https://employee-login-backend-vlfa.onrender.com";
+  <!-- FullCalendar Script -->
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
-document.addEventListener("DOMContentLoaded", function () {
-  const calendarEl = document.getElementById("calendar");
-  const employeeSelect = document.getElementById("employee-select");
-  const modal = document.getElementById("leaveModal");
-  const closeBtn = document.querySelector(".close");
-  const saveBtn = document.getElementById("saveLeave");
-  const leaveTypeSelect = document.getElementById("leaveType");
+  <script>
+    let calendar;
+    let selectedDate = null;
 
-  // Initialize Select2
-  $("#employee-select").select2({ placeholder: "Select an employee", width: "300px" });
+     function loadEmployeeLeaves(empId) {
+        fetch(`/leave-events/${empId}`)
+          .then(res => res.json())
+          .then(events => {
+            if (calendar) {
+              calendar.removeAllEvents();
+              // Map DB fields to FullCalendar fields
+              events.forEach(event => {
+               calendar.addEvent({
+                  id: event.id,
+                  title: event.leave_type + " Leave",
+                  start: event.date,
+                  color: event.color
+                });
 
-  // Initialize FullCalendar
-  calendar = new FullCalendar.Calendar(calendarEl, {
-    initialView: "dayGridMonth",
-    height: "auto",
-    dateClick: function(info) {
-      if (!employeeSelect.value) return alert("Select an employee first!");
-      selectedDate = info.dateStr;
-      modal.style.display = "block";
-    },
-    events: []
-  });
-  calendar.render();
-
-  // Close modal
-  closeBtn.onclick = () => { modal.style.display = "none"; };
-  window.onclick = event => { if (event.target === modal) modal.style.display = "none"; };
-
-  // Go back button
-  window.goBack = () => { window.location.href = "admin-dashboard.html"; };
-
-  // Load employees from backend
-  fetch(`${BACKEND_URL}/employees`)
-    .then(res => res.json())
-    .then(data => {
-      employeeSelect.innerHTML = "";
-      data.forEach(emp => {
-        const option = document.createElement("option");
-        option.value = emp.employee_id;
-        option.textContent = emp.name;
-        employeeSelect.appendChild(option);
-      });
-      if (employeeSelect.options.length > 0) {
-        employeeSelect.selectedIndex = 0;
-        loadEmployeeLeaves(employeeSelect.value);
+              });
+            }
+          })
+          .catch(err => console.error(err));
       }
-    })
-    .catch(err => console.error("Error loading employees:", err));
 
-  // On employee change
-  employeeSelect.addEventListener("change", function () {
-    loadEmployeeLeaves(this.value);
-  });
 
-  // Save Leave
-  saveBtn.onclick = () => {
-    const leaveType = leaveTypeSelect.value;
-    const empId = employeeSelect.value;
-    if (!selectedDate || !leaveType || !empId) return;
 
-    const colorMap = { PL: "#007bff", CL: "#28a745", SL: "#dc3545", Absent: "#ffc107" };
-    const payload = {
-      employee_id: empId,
-      date: selectedDate,
-      leave_type: leaveType,
-      color: colorMap[leaveType]
-    };
-
-    fetch(`${BACKEND_URL}/leave-events`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    })
-    .then(res => res.json())
-    .then(saved => {
-      calendar.addEvent({
-        id: saved.id,
-        title: leaveType + " Leave",
-        start: selectedDate,
-        color: colorMap[leaveType]
+    document.addEventListener("DOMContentLoaded", function () {
+      const calendarEl = document.getElementById("calendar");
+      const employeeSelect = document.getElementById("employee-select");
+      const modal = document.getElementById("leaveModal");
+      const closeBtn = document.querySelector(".close");
+      const saveBtn = document.getElementById("saveLeave");
+      const leaveTypeSelect = document.getElementById("leaveType");
+      $("#employee-select").select2({
+        placeholder: "Select an employee",
+        width: "300px"
       });
-      modal.style.display = "none";
-      selectedDate = null;
-    })
-    .catch(err => console.error(err));
-  };
-});
 
-// Load leaves for selected employee
-function loadEmployeeLeaves(empId) {
-  if (!empId) return;
-  fetch(`https://employee-login-backend-vlfa.onrender.com/leave-events/${empId}`)
-    .then(res => res.json())
-    .then(events => {
-      calendar.removeAllEvents();
-      events.forEach(event => {
-        calendar.addEvent({
-          id: event.id,
-          title: event.leave_type + " Leave",
-          start: event.date,
-          color: event.color
+      // Initialize calendar
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: "dayGridMonth",
+        height: "auto",
+      dateClick: function (info) {
+        if (!employeeSelect.value) return alert("Select an employee first!");
+        selectedDate = info.dateStr;
+        modal.style.display = "block";
+      },
+
+        events: []
+      });
+
+      calendar.render();
+
+      // On employee change
+      employeeSelect.addEventListener("change", function () {
+        loadEmployeeLeaves(this.value);
+      });
+
+      // Save Leave
+    saveBtn.onclick = function () {
+        const leaveType = leaveTypeSelect.value;
+        const empId = employeeSelect.value;
+      
+        const colorMap = {
+          PL: "#007bff",
+          CL: "#28a745",
+          SL: "#dc3545",
+          Absent: "#ffc107"
+        };
+      
+        if (selectedDate && leaveType) {
+          const newLeave = {
+            employee_id: empId,
+            title: leaveType + " Leave",
+            start: selectedDate,
+            leave_type: leaveType,
+            color: colorMap[leaveType]
+          };
+      
+          fetch('https://employee-login-backend-vlfa.onrender.com/leave-events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newLeave)
+          })
+          .then(res => res.json())
+          .then(saved => {
+            // Add new leave with DB ID
+            calendar.addEvent({ ...newLeave, id: saved.id });
+            modal.style.display = "none";
+            selectedDate = null;
+          })
+          .catch(err => console.error(err));
+        }
+      };
+
+
+      // Close modal
+      closeBtn.onclick = function () {
+        modal.style.display = "none";
+      };
+
+      window.onclick = function (event) {
+        if (event.target === modal) {
+          modal.style.display = "none";
+        }
+      };
+
+      // Fetch employee list from backend
+      fetch("https://employee-login-backend-vlfa.onrender.com/employees")
+        .then(response => response.json())
+        .then(data => {
+          employeeSelect.innerHTML = ""; // Clear default
+          data.forEach(emp => {
+            const option = document.createElement("option");
+            option.value = emp.employee_id;
+            option.textContent = emp.name;
+            employeeSelect.appendChild(option);
+          });
+
+          if (employeeSelect.options.length > 0) {
+            employeeSelect.selectedIndex = 0;
+            loadEmployeeLeaves(employeeSelect.value);
+          }
+        })
+        .catch(error => {
+          console.error("Error loading employee list:", error);
         });
-      });
-    })
-    .catch(err => console.error(err));
+    });
+  </script>
+<script>
+  function goBack() {
+  window.location.href = "admin-dashboard.html"; // or whatever your dashboard file is
 }
-</script>
 
+</script>
 </body>
 </html>
+
+
