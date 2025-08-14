@@ -133,31 +133,34 @@
 
   <!-- FullCalendar Script -->
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <script>
+    const BACKEND_URL = "https://employee-login-backend-vlfa.onrender.com";
+    </script>
+
 
   <script>
     let calendar;
     let selectedDate = null;
 
      function loadEmployeeLeaves(empId) {
-        fetch(`https://employee-login-backend-vlfa.onrender.com/leave-events/${empId}`)
+        fetch(`${BACKEND_URL}/leave-events/${empId}`)
           .then(res => res.json())
           .then(events => {
             if (calendar) {
               calendar.removeAllEvents();
-              // Map DB fields to FullCalendar fields
               events.forEach(event => {
-               calendar.addEvent({
+                calendar.addEvent({
                   id: event.id,
                   title: event.leave_type + " Leave",
                   start: event.date,
                   color: event.color
                 });
-
               });
             }
           })
           .catch(err => console.error(err));
       }
+
 
 
 
@@ -213,7 +216,7 @@
       color: colorMap[leaveType]
     };
 
-    fetch('/leave-events', {
+   fetch(`${BACKEND_URL}/leave-events`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(newLeave)
@@ -223,7 +226,6 @@
       return res.json();
     })
     .then(saved => {
-      // Add new leave to calendar
       calendar.addEvent({ 
         id: saved.id, 
         title: leaveType + " Leave", 
@@ -234,7 +236,7 @@
       selectedDate = null;
     })
     .catch(err => console.error("Error saving leave:", err));
-  }
+
 };
 
       // Close modal
@@ -249,7 +251,8 @@
       };
 
       // Fetch employee list from backend
-      fetch("https://employee-login-backend-vlfa.onrender.com/employees")
+      fetch(`${BACKEND_URL}/employees`)
+
         .then(response => response.json())
         .then(data => {
           employeeSelect.innerHTML = ""; // Clear default
@@ -278,6 +281,7 @@
 </script>
 </body>
 </html>
+
 
 
 
