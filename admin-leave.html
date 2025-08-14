@@ -197,47 +197,46 @@
       });
 
       // Save Leave
-  saveBtn.onclick = function () {
-  const leaveType = leaveTypeSelect.value;
-  const empId = employeeSelect.value;
-
-  const colorMap = {
-    PL: "#007bff",
-    CL: "#28a745",
-    SL: "#dc3545",
-    Absent: "#ffc107"
-  };
-
-  if (selectedDate && leaveType) {
-    const newLeave = {
-      employee_id: empId,
-      date: selectedDate,
-      leave_type: leaveType,
-      color: colorMap[leaveType]
-    };
-
-   fetch(`${BACKEND_URL}/leave-events`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(newLeave)
-    })
-    .then(res => {
-      if (!res.ok) throw new Error(`Server error: ${res.status}`);
-      return res.json();
-    })
-    .then(saved => {
-      calendar.addEvent({ 
-        id: saved.id, 
-        title: leaveType + " Leave", 
-        start: selectedDate, 
-        color: colorMap[leaveType] 
-      });
-      modal.style.display = 'none';
-      selectedDate = null;
-    })
-    .catch(err => console.error("Error saving leave:", err));
-
-};
+      saveBtn.onclick = function () {
+        const leaveType = leaveTypeSelect.value;
+        const empId = employeeSelect.value;
+      
+        const colorMap = {
+          PL: "#007bff",
+          CL: "#28a745",
+          SL: "#dc3545",
+          Absent: "#ffc107"
+        };
+      
+        if (selectedDate && leaveType) {
+          const newLeave = {
+            employee_id: empId,
+            date: selectedDate,
+            leave_type: leaveType,
+            color: colorMap[leaveType]
+          };
+      
+          fetch(`${BACKEND_URL}/leave-events`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newLeave)
+          })
+          .then(res => {
+            if (!res.ok) throw new Error(`Server error: ${res.status}`);
+            return res.json();
+          })
+          .then(saved => {
+            calendar.addEvent({ 
+              id: saved.id, 
+              title: leaveType + " Leave", 
+              start: selectedDate, 
+              color: colorMap[leaveType] 
+            });
+            modal.style.display = 'none';
+            selectedDate = null;
+          })
+          .catch(err => console.error("Error saving leave:", err));
+      };  // ← THIS CLOSING BRACE was missing
 
       // Close modal
       closeBtn.onclick = function () {
@@ -281,6 +280,7 @@
 </script>
 </body>
 </html>
+
 
 
 
