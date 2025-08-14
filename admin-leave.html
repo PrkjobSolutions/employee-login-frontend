@@ -71,6 +71,7 @@
 <script>
 let calendar;
 let selectedDate = null;
+const BACKEND_URL = "https://employee-login-backend-vlfa.onrender.com";
 
 document.addEventListener("DOMContentLoaded", function () {
   const calendarEl = document.getElementById("calendar");
@@ -103,8 +104,8 @@ document.addEventListener("DOMContentLoaded", function () {
   // Go back button
   window.goBack = () => { window.location.href = "admin-dashboard.html"; };
 
-  // Load employees
-  fetch("/employees")
+  // Load employees from backend
+  fetch(`${BACKEND_URL}/employees`)
     .then(res => res.json())
     .then(data => {
       employeeSelect.innerHTML = "";
@@ -140,7 +141,7 @@ document.addEventListener("DOMContentLoaded", function () {
       color: colorMap[leaveType]
     };
 
-    fetch("/leave-events", {
+    fetch(`${BACKEND_URL}/leave-events`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -162,7 +163,8 @@ document.addEventListener("DOMContentLoaded", function () {
 
 // Load leaves for selected employee
 function loadEmployeeLeaves(empId) {
-  fetch(`/leave-events/${empId}`)
+  if (!empId) return;
+  fetch(`https://employee-login-backend-vlfa.onrender.com/leave-events/${empId}`)
     .then(res => res.json())
     .then(events => {
       calendar.removeAllEvents();
@@ -181,4 +183,3 @@ function loadEmployeeLeaves(empId) {
 
 </body>
 </html>
-
