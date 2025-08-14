@@ -137,16 +137,26 @@
   <script>
     let calendar;
     let selectedDate = null;
-
-    function loadEmployeeLeaves(empId) {
-      const stored = localStorage.getItem("leaveEvents_" + empId);
-      const events = stored ? JSON.parse(stored) : [];
-
-      if (calendar) {
-        calendar.removeAllEvents();
-        events.forEach(event => calendar.addEvent(event));
-      }
-    }
+      function loadEmployeeLeaves(empId) {
+          fetch(`https://employee-login-backend-vlfa.onrender.com/leave-events/${empId}`)
+            .then(res => res.json())
+            .then(events => {
+              if (calendar) {
+                calendar.removeAllEvents();
+                // backend returns: { id, employee_id, start, title, color }
+                events.forEach(e => {
+                  calendar.addEvent({
+                    id: e.id,
+                    title: e.title,     // already "PL Leave", "CL Leave", etc. from backend
+                    start: e.start,     // date column is aliased to "start" by backend
+                    color: e.color
+                  });
+                });
+              }
+            })
+            .catch(err => console.error("Error loading leaves:", err));
+        }
+        }
 
     document.addEventListener("DOMContentLoaded", function () {
       const calendarEl = document.getElementById("calendar");
@@ -179,36 +189,49 @@
       });
 
       // Save Leave
-      saveBtn.onclick = function () {
-        const leaveType = leaveTypeSelect.value;
-        const empId = employeeSelect.value;
-
-        const colorMap = {
-          PL: "#007bff",
-          CL: "#28a745",
-          SL: "#dc3545",
-          Absent: "#ffc107"
-        };
-
-        if (selectedDate && leaveType) {
-          const newLeave = {
-            title: leaveType + " Leave",
-            date: selectedDate,
-            color: colorMap[leaveType]
+        saveBtn.onclick = function () {
+            const leaveType = leaveTypeSelect.value;
+            const empId = employeeSelect.value;
+          
+            const colorMap = {
+              PL: "#007bff",
+              CL: "#28a745",
+              SL: "#dc3545",
+              Absent: "#ffc107"
+            };
+          
+            if (selectedDate && leaveType) {
+              const payload = {
+                employee_id: empId,
+                date: selectedDate,
+                leave_type: leaveType,           // backend expects this
+                color: colorMap[leaveType]
+              };
+          
+              fetch('https://employee-login-backend-vlfa.onrender.com/leave-events', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+              })
+              .then(res => {
+                if (!res.ok) throw new Error(`Server error: ${res.status}`);
+                return res.json();               // { id: ... }
+              })
+              .then(saved => {
+                // reflect the saved event in the calendar immediately
+                calendar.addEvent({
+                  id: saved.id,
+                  title: leaveType + ' Leave',
+                  start: selectedDate,
+                  color: colorMap[leaveType]
+                });
+                modal.style.display = 'none';
+                selectedDate = null;
+              })
+              .catch(err => console.error('Error saving leave:', err));
+            }
           };
 
-          calendar.addEvent(newLeave);
-
-          const key = "leaveEvents_" + empId;
-          let stored = localStorage.getItem(key);
-          let events = stored ? JSON.parse(stored) : [];
-          events.push(newLeave);
-          localStorage.setItem(key, JSON.stringify(events));
-
-          modal.style.display = "none";
-          selectedDate = null;
-        }
-      };
 
       // Close modal
       closeBtn.onclick = function () {
@@ -251,4 +274,5 @@
 </script>
 </body>
 </html>
+
 
