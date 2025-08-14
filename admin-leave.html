@@ -194,42 +194,48 @@
       });
 
       // Save Leave
-    saveBtn.onclick = function () {
-        const leaveType = leaveTypeSelect.value;
-        const empId = employeeSelect.value;
-      
-        const colorMap = {
-          PL: "#007bff",
-          CL: "#28a745",
-          SL: "#dc3545",
-          Absent: "#ffc107"
-        };
-      
-        if (selectedDate && leaveType) {
-          const newLeave = {
-            employee_id: empId,
-            title: leaveType + " Leave",
-            start: selectedDate,
-            leave_type: leaveType,
-            color: colorMap[leaveType]
-          };
-      
-          fetch('https://employee-login-backend-vlfa.onrender.com/leave-events', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newLeave)
-          })
-          .then(res => res.json())
-          .then(saved => {
-            // Add new leave with DB ID
-            calendar.addEvent({ ...newLeave, id: saved.id });
-            modal.style.display = "none";
-            selectedDate = null;
-          })
-          .catch(err => console.error(err));
-        }
-      };
+  saveBtn.onclick = function () {
+  const leaveType = leaveTypeSelect.value;
+  const empId = employeeSelect.value;
 
+  const colorMap = {
+    PL: "#007bff",
+    CL: "#28a745",
+    SL: "#dc3545",
+    Absent: "#ffc107"
+  };
+
+  if (selectedDate && leaveType) {
+    const newLeave = {
+      employee_id: empId,
+      date: selectedDate,
+      leave_type: leaveType,
+      color: colorMap[leaveType]
+    };
+
+    fetch('/leave-events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newLeave)
+    })
+    .then(res => {
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      return res.json();
+    })
+    .then(saved => {
+      // Add new leave to calendar
+      calendar.addEvent({ 
+        id: saved.id, 
+        title: leaveType + " Leave", 
+        start: selectedDate, 
+        color: colorMap[leaveType] 
+      });
+      modal.style.display = 'none';
+      selectedDate = null;
+    })
+    .catch(err => console.error("Error saving leave:", err));
+  }
+};
 
       // Close modal
       closeBtn.onclick = function () {
@@ -272,6 +278,7 @@
 </script>
 </body>
 </html>
+
 
 
 
