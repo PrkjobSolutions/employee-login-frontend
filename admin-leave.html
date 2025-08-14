@@ -139,7 +139,7 @@
     let selectedDate = null;
 
      function loadEmployeeLeaves(empId) {
-        fetch(`/leave-events/${empId}`)
+        fetch(`https://employee-login-backend-vlfa.onrender.com/leave-events/${empId}`)
           .then(res => res.json())
           .then(events => {
             if (calendar) {
@@ -272,5 +272,6 @@
 </script>
 </body>
 </html>
+
 
 
