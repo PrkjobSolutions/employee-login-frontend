@@ -88,8 +88,8 @@ document.addEventListener("DOMContentLoaded", function () {
     initialView: "dayGridMonth",
     height: "auto",
     dateClick: function(info) {
-      selectedDate = info.dateStr;
       if (!employeeSelect.value) return alert("Select an employee first!");
+      selectedDate = info.dateStr;
       modal.style.display = "block";
     },
     events: []
@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Go back button
   window.goBack = () => { window.location.href = "admin-dashboard.html"; };
 
-  // Load employees from backend
+  // Load employees
   fetch("/employees")
     .then(res => res.json())
     .then(data => {
@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const colorMap = { PL: "#007bff", CL: "#28a745", SL: "#dc3545", Absent: "#ffc107" };
     const payload = {
       employee_id: empId,
-      start: selectedDate,
+      date: selectedDate,
       leave_type: leaveType,
       color: colorMap[leaveType]
     };
@@ -158,7 +158,6 @@ document.addEventListener("DOMContentLoaded", function () {
     })
     .catch(err => console.error(err));
   };
-
 });
 
 // Load leaves for selected employee
@@ -171,7 +170,7 @@ function loadEmployeeLeaves(empId) {
         calendar.addEvent({
           id: event.id,
           title: event.leave_type + " Leave",
-          start: event.start || event.date, // fallback if start missing
+          start: event.date,
           color: event.color
         });
       });
@@ -182,3 +181,4 @@ function loadEmployeeLeaves(empId) {
 
 </body>
 </html>
+
