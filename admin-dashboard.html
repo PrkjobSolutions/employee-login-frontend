@@ -286,35 +286,46 @@
 
 
 <script>
-  function loadEvents() {
+  const API_BASE = "https://employee-login-backend-vlfa.onrender.com";
+
+  async function loadEvents() {
     const eventList = document.getElementById("eventList");
-    const stored = JSON.parse(localStorage.getItem("upcomingEvents")) || [];
+    eventList.innerHTML = "Loading...";
 
-    eventList.innerHTML = "";
+    try {
+      const res = await fetch(`${API_BASE}/events`);
+      const rows = await res.json();
 
-    if (stored.length === 0) {
-      eventList.innerHTML = "<li>No events posted yet.</li>";
-      return;
+      eventList.innerHTML = "";
+
+      if (!rows || rows.length === 0) {
+        eventList.innerHTML = "<li>No events posted yet.</li>";
+        return;
+      }
+
+      rows.forEach(ev => {
+        // ev has: id, title, date, description, event_type
+        let label = "Event 🏢";
+        if (ev.event_type === "birthday") label = "Birthday 🎂";
+        else if (ev.event_type === "anniversary") label = "Work Anniversary 🎉";
+
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <strong>${ev.title}</strong> – ${label} ${formatDate(ev.date)}
+          <button onclick="deleteEvent(${ev.id})"
+            style="margin-left: 10px; color: white; background: red; border: none; border-radius: 4px; padding: 3px 6px; cursor: pointer;">
+            ❌
+          </button>
+        `;
+        eventList.appendChild(li);
+      });
+    } catch (err) {
+      console.error("Error loading events:", err);
+      eventList.innerHTML = "<li>Error loading events.</li>";
     }
-
-    stored.forEach((event, index) => {
-      let label = "Event 🏢";
-      if (event.type === "birthday") label = "Birthday 🎂";
-      else if (event.type === "anniversary") label = "Work Anniversary 🎉";
-
-      const li = document.createElement("li");
-      li.innerHTML = `
-        <strong>${event.name}</strong> – ${label} ${formatDate(event.date)}
-        <button onclick="deleteEvent(${index})"
-          style="margin-left: 10px; color: white; background: red; border: none; border-radius: 4px; padding: 3px 6px; cursor: pointer;">
-          ❌
-        </button>
-      `;
-      eventList.appendChild(li);
-    });
   }
 
-  function saveEvent() {
+  async function saveEvent() {
     const name = document.getElementById("eventName").value.trim();
     const date = document.getElementById("eventDate").value;
     const type = document.getElementById("eventType").value;
@@ -324,23 +335,49 @@
       return;
     }
 
-    const newEvent = { name, date, type };
-    const stored = JSON.parse(localStorage.getItem("upcomingEvents")) || [];
-    stored.push(newEvent);
-    localStorage.setItem("upcomingEvents", JSON.stringify(stored));
+    try {
+      // DB columns: title, date, description, event_type
+      const payload = {
+        title: name,
+        date: date,
+        description: "",          // no description field in UI; send empty
+        event_type: type          // "birthday" or "event" (and "anniversary" if you use it)
+      };
 
-    document.getElementById("eventName").value = "";
-    document.getElementById("eventDate").value = "";
-    document.getElementById("eventType").value = "birthday";
+      const res = await fetch(`${API_BASE}/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
 
-    loadEvents();
+      if (!res.ok) {
+        throw new Error(`Save failed: ${res.status}`);
+      }
+
+      // Clear inputs (same behavior)
+      document.getElementById("eventName").value = "";
+      document.getElementById("eventDate").value = "";
+      document.getElementById("eventType").value = "birthday";
+
+      // Reload list from DB
+      loadEvents();
+    } catch (err) {
+      console.error("Error saving event:", err);
+      alert("Error saving event. See console for details.");
+    }
   }
 
-  function deleteEvent(index) {
-    const stored = JSON.parse(localStorage.getItem("upcomingEvents")) || [];
-    stored.splice(index, 1);
-    localStorage.setItem("upcomingEvents", JSON.stringify(stored));
-    loadEvents();
+  async function deleteEvent(id) {
+    try {
+      const res = await fetch(`${API_BASE}/events/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        throw new Error(`Delete failed: ${res.status}`);
+      }
+      loadEvents();
+    } catch (err) {
+      console.error("Error deleting event:", err);
+      alert("Error deleting event. See console for details.");
+    }
   }
 
   function formatDate(dateStr) {
@@ -350,6 +387,7 @@
 
   document.addEventListener("DOMContentLoaded", loadEvents);
 </script>
+
 
 
   <script>
