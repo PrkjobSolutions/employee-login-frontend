@@ -132,27 +132,36 @@
       });
       calendar.render();
 
-      // Event list
+      // Event list (fetch from DB)
       const listContainer = document.querySelector("#eventListBox .event-list");
       listContainer.innerHTML = "";
-
-      const events = JSON.parse(localStorage.getItem("upcomingEvents")) || [];
-
-      if (events.length === 0) {
-        listContainer.innerHTML = "<div>No upcoming events posted.</div>";
-      } else {
-        events.forEach(event => {
-          const div = document.createElement("div");
-          div.className = `event-item ${event.type}`;
-
-          let label = "Event 🏢";
-          if (event.type === "birthday") label = "Birthday 🎂";
-          else if (event.type === "anniversary") label = "Work Anniversary 🎉";
-
-          div.innerHTML = `<strong>${event.name}</strong> – ${label} ${formatDate(event.date)}`;
-          listContainer.appendChild(div);
-        });
+      
+      try {
+        const evRes = await fetch("https://employee-login-backend-vlfa.onrender.com/events");
+        if (!evRes.ok) throw new Error("Failed to fetch events");
+      
+        const events = await evRes.json();
+      
+        if (events.length === 0) {
+          listContainer.innerHTML = "<div>No upcoming events posted.</div>";
+        } else {
+          events.forEach(event => {
+            const div = document.createElement("div");
+            div.className = `event-item ${event.event_type}`;
+      
+            let label = "Event 🏢";
+            if (event.event_type === "birthday") label = "Birthday 🎂";
+            else if (event.event_type === "anniversary") label = "Work Anniversary 🎉";
+      
+            div.innerHTML = `<strong>${event.title}</strong> – ${label} ${formatDate(event.date)}`;
+            listContainer.appendChild(div);
+          });
+        }
+      } catch (err) {
+        console.error("Events load error:", err);
+        listContainer.innerHTML = "<div>Failed to load events.</div>";
       }
+      
 
       // Pending documents
       const pending = localStorage.getItem("pendingDocs_" + updatedEmp.employee_id);
@@ -199,6 +208,7 @@
 
 </body>
 </html>
+
 
 
 
