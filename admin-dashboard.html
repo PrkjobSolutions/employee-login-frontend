@@ -416,45 +416,60 @@
       alert("Leave summary saved for Employee " + empId);
     };
   </script>
-  <script>
-    function saveDocuments() {
-     const empSelect = document.getElementById("doc-employee");
-     const empId = empSelect.options[empSelect.selectedIndex].getAttribute("data-emp-code");
+ <script>
+  async function saveDocuments() {
+    const empSelect = document.getElementById("doc-employee");
+    const empId = empSelect.options[empSelect.selectedIndex].getAttribute("data-emp-code");
 
-      const offerFile = document.getElementById("offerLetter").files[0];
-      const salaryFile = document.getElementById("salarySlip").files[0];
+    const offerFile = document.getElementById("offerLetter").files[0];
+    const salaryFile = document.getElementById("salarySlip").files[0];
 
-      if (!offerFile || !salaryFile) {
-        alert("Please select both Offer Letter and Salary Slip.");
-        return;
-      }
+    if (!offerFile || !salaryFile) {
+      alert("Please select both Offer Letter and Salary Slip.");
+      return;
+    }
 
-      const reader1 = new FileReader();
-      const reader2 = new FileReader();
+    try {
+      // Upload Offer Letter
+      const offerForm = new FormData();
+      offerForm.append("file", offerFile);
 
-      reader1.onload = function () {
-        const offerBase64 = reader1.result;
+      const offerRes = await fetch(`${API_BASE}/api/documents/upload`, {
+        method: "POST",
+        body: offerForm
+      });
+      const offerData = await offerRes.json();
 
-        reader2.onload = function () {
-          const salaryBase64 = reader2.result;
+      // Upload Salary Slip
+      const salaryForm = new FormData();
+      salaryForm.append("file", salaryFile);
 
-          const docData = {
-            offerLetter: offerBase64,
-            salarySlip: salaryBase64
-          };
+      const salaryRes = await fetch(`${API_BASE}/api/documents/upload`, {
+        method: "POST",
+        body: salaryForm
+      });
+      const salaryData = await salaryRes.json();
 
-          localStorage.setItem("documents_emp" + empId, JSON.stringify(docData));
-          alert("Documents saved successfully for Employee " + empId);
-          document.getElementById("offerLetter").value = "";
-          document.getElementById("salarySlip").value = "";
-        };
-
-        reader2.readAsDataURL(salaryFile);
+      // Save Cloudinary URLs instead of base64
+      const docData = {
+        offerLetter: offerData.fileUrl,
+        salarySlip: salaryData.fileUrl
       };
 
-      reader1.readAsDataURL(offerFile);
+      localStorage.setItem("documents_emp" + empId, JSON.stringify(docData));
+      alert("✅ Documents uploaded for Employee " + empId);
+
+      // Reset file inputs
+      document.getElementById("offerLetter").value = "";
+      document.getElementById("salarySlip").value = "";
+
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("❌ Failed to upload documents.");
     }
-  </script>
+  }
+</script>
+
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     const headcountBox = document.getElementById("headcount-box");
@@ -636,6 +651,7 @@
   
 </body>
 </html>
+
 
 
 
