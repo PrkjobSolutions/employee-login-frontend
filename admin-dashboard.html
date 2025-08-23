@@ -417,57 +417,57 @@
     };
   </script>
  <script>
-  async function saveDocuments() {
-    const empSelect = document.getElementById("doc-employee");
-    const empId = empSelect.options[empSelect.selectedIndex].getAttribute("data-emp-code");
+async function saveDocuments() {
+  const empSelect = document.getElementById("doc-employee");
+  const empId = empSelect.options[empSelect.selectedIndex].getAttribute("data-emp-code");
 
-    const offerFile = document.getElementById("offerLetter").files[0];
-    const salaryFile = document.getElementById("salarySlip").files[0];
+  const offerFile = document.getElementById("offerLetter").files[0];
+  const salaryFile = document.getElementById("salarySlip").files[0];
 
-    if (!offerFile || !salaryFile) {
-      alert("Please select both Offer Letter and Salary Slip.");
-      return;
-    }
-
-    try {
-      // Upload Offer Letter
-      const offerForm = new FormData();
-      offerForm.append("file", offerFile);
-
-      const offerRes = await fetch(`${API_BASE}/api/documents/upload`, {
-        method: "POST",
-        body: offerForm
-      });
-      const offerData = await offerRes.json();
-
-      // Upload Salary Slip
-      const salaryForm = new FormData();
-      salaryForm.append("file", salaryFile);
-
-      const salaryRes = await fetch(`${API_BASE}/api/documents/upload`, {
-        method: "POST",
-        body: salaryForm
-      });
-      const salaryData = await salaryRes.json();
-
-      // Save Cloudinary URLs instead of base64
-      const docData = {
-        offerLetter: offerData.fileUrl,
-        salarySlip: salaryData.fileUrl
-      };
-
-      localStorage.setItem("documents_emp" + empId, JSON.stringify(docData));
-      alert("✅ Documents uploaded for Employee " + empId);
-
-      // Reset file inputs
-      document.getElementById("offerLetter").value = "";
-      document.getElementById("salarySlip").value = "";
-
-    } catch (err) {
-      console.error("Upload error:", err);
-      alert("❌ Failed to upload documents.");
-    }
+  if (!offerFile || !salaryFile) {
+    alert("Please select both Offer Letter and Salary Slip.");
+    return;
   }
+
+  try {
+    // helper upload function
+    async function uploadFile(file) {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`${API_BASE}/api/documents/upload`, { method: "POST", body: form });
+
+      if (!res.ok) {
+        const text = await res.text(); // catch HTML error
+        throw new Error(`Upload failed: ${res.status} - ${text}`);
+      }
+
+      return res.json();
+    }
+
+    const offerData = await uploadFile(offerFile);
+    const salaryData = await uploadFile(salaryFile);
+
+    const docData = {
+      offerLetter: offerData.fileUrl,
+      salarySlip: salaryData.fileUrl
+    };
+
+    // 🔑 Save to backend database (NOT just localStorage)
+    await fetch(`${API_BASE}/api/documents/${empId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(docData)
+    });
+
+    alert(`✅ Documents uploaded for Employee ${empId}`);
+    document.getElementById("offerLetter").value = "";
+    document.getElementById("salarySlip").value = "";
+  } catch (err) {
+    console.error("Upload error:", err);
+    alert("❌ Failed to upload documents. Check console.");
+  }
+}
+
 </script>
 
 <script>
@@ -626,6 +626,7 @@
   
 </body>
 </html>
+
 
 
 
