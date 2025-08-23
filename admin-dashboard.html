@@ -534,32 +534,7 @@
       });
   });
 </script>
-
-<script>
-  const empId = emp.employee_id;
-
-  document.getElementById("offerBtn").onclick = function () {
-    const docs = JSON.parse(localStorage.getItem("documents_emp" + empId));
-    if (!docs || !docs.offerLetter) {
-      alert("No Offer Letter uploaded.");
-      return;
-    }
-
-    const newWindow = window.open();
-    newWindow.document.write(`<iframe src="${docs.offerLetter}" width="100%" height="100%"></iframe>`);
-  };
-
-  document.getElementById("salaryBtn").onclick = function () {
-    const docs = JSON.parse(localStorage.getItem("documents_emp" + empId));
-    if (!docs || !docs.salarySlip) {
-      alert("No Salary Slip uploaded.");
-      return;
-    }
-
-    const newWindow = window.open();
-    newWindow.document.write(`<iframe src="${docs.salarySlip}" width="100%" height="100%"></iframe>`);
-  };
-</script>
+  
 <script>
   // Populate the new "Pending Docs" dropdown
   document.addEventListener("DOMContentLoaded", function () {
@@ -651,6 +626,7 @@
   
 </body>
 </html>
+
 
 
 
