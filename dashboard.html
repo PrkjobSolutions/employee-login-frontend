@@ -29,7 +29,7 @@
   <h2 id="welcome-msg">Welcome back</h2>
 </div>
 
-
+<div id="employee-documents"></div>
 <div class="dashboard">
   <div class="profile-info" style="text-align: center;">
     <img id="profile-pic" src="" alt="Profile Picture" style="width: 120px; border-radius: 50%; margin-bottom: 15px;" />
@@ -114,8 +114,6 @@
       const imgUrl = updatedEmp.profileImage && updatedEmp.profileImage.trim() !== "" ? updatedEmp.profileImage : "https://via.placeholder.com/120";
       document.getElementById("profile-pic").src = imgUrl;
 
-
-
       // Leave summary
       const summary = JSON.parse(localStorage.getItem("leaveSummary_" + updatedEmp.employee_id)) || {};
       document.getElementById("pl-count").textContent = summary.PL ?? 0;
@@ -161,7 +159,7 @@
         console.error("Events load error:", err);
         listContainer.innerHTML = "<div>Failed to load events.</div>";
       }
-      
+
 
       // Pending documents
       const pending = localStorage.getItem("pendingDocs_" + updatedEmp.employee_id);
@@ -204,10 +202,57 @@
     location.replace("index.html");
   }
 </script>
+<script>
+async function loadEmployeeDocuments() {
+  try {
+    const API_BASE = "https://employee-login-backend-vlfa.onrender.com"; 
+    const employee = JSON.parse(localStorage.getItem("employee")); 
+    const employeeId = employee?.employee_id;
 
+    if (!employeeId) {
+      console.error("No employee ID found in localStorage.");
+      return;
+    }
+
+    const docRes = await fetch(`${API_BASE}/api/documents/${employeeId}`);
+    if (!docRes.ok) throw new Error("Failed to fetch documents");
+
+    const docs = await docRes.json();
+    console.log("Employee documents:", docs);
+
+    const docsContainer = document.getElementById("employee-documents");
+    docsContainer.innerHTML = ""; 
+
+    if (!docs.length) {
+      docsContainer.innerHTML = "<p>No documents uploaded yet.</p>";
+      return;
+    }
+
+    docs.forEach(doc => {
+    const fileUrl = doc.file_path.startsWith("http")
+      ? doc.file_path
+      : `${API_BASE}/${doc.file_path}`;
+  
+    const div = document.createElement("div");
+    div.innerHTML = `
+      <p><strong>${doc.doc_type}</strong></p>
+      <a href="${fileUrl}" target="_blank">View Document</a>
+    `;
+    docsContainer.appendChild(div);
+  });
+
+  } catch (err) {
+    console.error("Error fetching documents:", err);
+  }
+}
+</script>
+<script>
+loadEmployeeDocuments();
+</script>
 
 </body>
 </html>
+
 
 
 
