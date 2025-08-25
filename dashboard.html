@@ -167,18 +167,19 @@
 
       // Document buttons
       document.getElementById("offerBtn").onclick = () => {
-        const docs = JSON.parse(localStorage.getItem("documents_emp" + updatedEmp.employee_id));
-        if (!docs?.offerLetter) return alert("No Offer Letter uploaded.");
+        const offer = employeeDocs.find(d => d.doc_type === "offerLetter");
+        if (!offer) return alert("No Offer Letter uploaded.");
         const w = window.open();
-        w.document.write(`<iframe src="${docs.offerLetter}" width="100%" height="100%"></iframe>`);
+        w.document.write(`<iframe src="${offer.file_path}" width="100%" height="100%"></iframe>`);
+      };
+      
+      document.getElementById("salaryBtn").onclick = () => {
+        const salary = employeeDocs.find(d => d.doc_type === "salarySlip");
+        if (!salary) return alert("No Salary Slip uploaded.");
+        const w = window.open();
+        w.document.write(`<iframe src="${salary.file_path}" width="100%" height="100%"></iframe>`);
       };
 
-      document.getElementById("salaryBtn").onclick = () => {
-        const docs = JSON.parse(localStorage.getItem("documents_emp" + updatedEmp.employee_id));
-        if (!docs?.salarySlip) return alert("No Salary Slip uploaded.");
-        const w = window.open();
-        w.document.write(`<iframe src="${docs.salarySlip}" width="100%" height="100%"></iframe>`);
-      };
 
       document.getElementById("policyBtn").onclick = () => {
         const w = window.open();
@@ -189,6 +190,10 @@
         const w = window.open();
         w.document.write(`<iframe src="holiday-list-2025.pdf" width="100%" height="100%"></iframe>`);
       };
+
+      // ✅ Load employee documents after everything is ready
+      await loadEmployeeDocuments();
+
 
     } catch (err) {
       console.error("Error:", err);
@@ -203,6 +208,9 @@
   }
 </script>
 <script>
+  // store docs globally after fetching
+let employeeDocs = [];
+
 async function loadEmployeeDocuments() {
   try {
     const API_BASE = "https://employee-login-backend-vlfa.onrender.com"; 
@@ -218,6 +226,7 @@ async function loadEmployeeDocuments() {
     if (!docRes.ok) throw new Error("Failed to fetch documents");
 
     const docs = await docRes.json();
+    employeeDocs = docs; // 👈 save to global
     console.log("Employee documents:", docs);
 
     const docsContainer = document.getElementById("employee-documents");
@@ -229,29 +238,28 @@ async function loadEmployeeDocuments() {
     }
 
     docs.forEach(doc => {
-    const fileUrl = doc.file_path.startsWith("http")
-      ? doc.file_path
-      : `${API_BASE}/${doc.file_path}`;
-  
-    const div = document.createElement("div");
-    div.innerHTML = `
-      <p><strong>${doc.doc_type}</strong></p>
-      <a href="${fileUrl}" target="_blank">View Document</a>
-    `;
-    docsContainer.appendChild(div);
-  });
+      const fileUrl = doc.file_path.startsWith("http")
+        ? doc.file_path
+        : `${API_BASE}/${doc.file_path}`;
+
+      const div = document.createElement("div");
+      div.innerHTML = `
+        <p><strong>${doc.doc_type}</strong></p>
+        <a href="${fileUrl}" target="_blank">View Document</a>
+      `;
+      docsContainer.appendChild(div);
+    });
 
   } catch (err) {
     console.error("Error fetching documents:", err);
   }
 }
-</script>
-<script>
-loadEmployeeDocuments();
-</script>
+
+</script> 
 
 </body>
 </html>
+
 
 
 
