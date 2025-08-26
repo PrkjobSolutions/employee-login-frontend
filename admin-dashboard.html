@@ -226,22 +226,22 @@
       <button id="saveLeaveSummary" style="border-radius: 25px;">Save Summary</button>
     </div>
     <div class="section">
-    <h2>Upload Employee Documents</h2>
-    <label for="doc-employee"><strong>Select Employee:</strong></label>
-   <select id="doc-employee" class="select2">
-      <option disabled selected>Loading employees...</option>
-    </select>
-
-    <br><br>
-
-    <label>Offer Letter (PDF):</label><br>
-    <input type="file" id="offerLetter" accept="application/pdf"><br><br>
-
-    <label>Salary Slip (PDF):</label><br>
-    <input type="file" id="salarySlip" accept="application/pdf"><br><br>
-
-    <button onclick="saveDocuments()" style="border-radius: 25px;">Save Documents</button>
-  </div>
+      <h2>Upload Employee Documents</h2>
+      <label for="doc-employee"><strong>Select Employee:</strong></label>
+     <select id="doc-employee" class="select2">
+        <option disabled selected>Loading employees...</option>
+      </select>
+  
+      <br><br>
+  
+      <label>Offer Letter (PDF):</label><br>
+      <input type="file" id="offerLetter" accept="application/pdf"><br><br>
+  
+      <label>Salary Slip (PDF):</label><br>
+      <input type="file" id="salarySlip" accept="application/pdf"><br><br>
+  
+      <button onclick="saveDocuments()" style="border-radius: 25px;">Save Documents</button>
+    </div>
 
   <div class="section">
     <h2>Post Events / Birthdays</h2>
@@ -417,56 +417,57 @@
     };
   </script>
  <script>
-async function saveDocuments() {
-  const empSelect = document.getElementById("doc-employee");
-  const empId = empSelect.options[empSelect.selectedIndex].getAttribute("data-emp-code");
-
-  const offerFile = document.getElementById("offerLetter").files[0];
-  const salaryFile = document.getElementById("salarySlip").files[0];
-
-  if (!offerFile || !salaryFile) {
-    alert("Please select both Offer Letter and Salary Slip.");
-    return;
-  }
-
-  try {
-    // helper upload function
-    async function uploadFile(file) {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch(`${API_BASE}/api/documents/upload`, { method: "POST", body: form });
-
-      if (!res.ok) {
-        const text = await res.text(); // catch HTML error
-        throw new Error(`Upload failed: ${res.status} - ${text}`);
+   console.log("✅ saveDocuments() function called");
+    async function saveDocuments() {
+      const empSelect = document.getElementById("doc-employee");
+      const empId = empSelect.options[empSelect.selectedIndex].getAttribute("data-emp-code");
+    
+      const offerFile = document.getElementById("offerLetter").files[0];
+      const salaryFile = document.getElementById("salarySlip").files[0];
+    
+      if (!offerFile || !salaryFile) {
+        alert("Please select both Offer Letter and Salary Slip.");
+        return;
       }
-
-      return res.json();
+    
+      try {
+        // helper upload function
+        async function uploadFile(file) {
+          const form = new FormData();
+          form.append("file", file);
+          const res = await fetch(`${API_BASE}/api/documents/upload`, { method: "POST", body: form });
+    
+          if (!res.ok) {
+            const text = await res.text(); // catch HTML error
+            throw new Error(`Upload failed: ${res.status} - ${text}`);
+          }
+    
+          return res.json();
+        }
+    
+        const offerData = await uploadFile(offerFile);
+        const salaryData = await uploadFile(salaryFile);
+    
+        const docData = {
+          offerLetter: offerData.fileUrl,
+          salarySlip: salaryData.fileUrl
+        };
+    
+        // 🔑 Save to backend database (NOT just localStorage)
+        await fetch(`${API_BASE}/api/documents/${empId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(docData)
+        });
+    
+        alert(`✅ Documents uploaded for Employee ${empId}`);
+        document.getElementById("offerLetter").value = "";
+        document.getElementById("salarySlip").value = "";
+      } catch (err) {
+        console.error("Upload error:", err);
+        alert("❌ Failed to upload documents. Check console.");
+      }
     }
-
-    const offerData = await uploadFile(offerFile);
-    const salaryData = await uploadFile(salaryFile);
-
-    const docData = {
-      offerLetter: offerData.fileUrl,
-      salarySlip: salaryData.fileUrl
-    };
-
-    // 🔑 Save to backend database (NOT just localStorage)
-    await fetch(`${API_BASE}/api/documents/${empId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(docData)
-    });
-
-    alert(`✅ Documents uploaded for Employee ${empId}`);
-    document.getElementById("offerLetter").value = "";
-    document.getElementById("salarySlip").value = "";
-  } catch (err) {
-    console.error("Upload error:", err);
-    alert("❌ Failed to upload documents. Check console.");
-  }
-}
 
 </script>
 
@@ -626,6 +627,7 @@ async function saveDocuments() {
   
 </body>
 </html>
+
 
 
 
