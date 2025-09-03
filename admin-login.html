@@ -92,10 +92,6 @@
   </div>
 
 <script>
-  // ✅ Redirect instantly if already logged in
-  if (localStorage.getItem("adminLoggedIn") === "true") {
-    window.location.href = "admin-dashboard.html";
-  }
 
   document.getElementById("adminLoginForm").addEventListener("submit", async function (e) {
     e.preventDefault();
