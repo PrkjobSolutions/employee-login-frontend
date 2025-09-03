@@ -92,6 +92,11 @@
   </div>
 
 <script>
+  // ✅ Redirect instantly if already logged in
+  if (localStorage.getItem("adminLoggedIn") === "true") {
+    window.location.href = "admin-dashboard.html";
+  }
+
   document.getElementById("adminLoginForm").addEventListener("submit", async function (e) {
     e.preventDefault();
 
@@ -111,6 +116,8 @@
 
       if (result.success) {
         localStorage.setItem("adminLoggedIn", "true");
+        localStorage.setItem("adminId", result.admin.id);   // store admin id
+        localStorage.setItem("adminUsername", result.admin.username); // store username
         window.location.href = "admin-dashboard.html";
       } else {
         document.getElementById("error-msg").textContent = result.message || "Login failed";
