@@ -32,8 +32,6 @@
 <div id="employee-documents"></div>
 <div class="dashboard">
   <div class="profile-info" style="text-align: center;">
-    <img id="profile-pic" src="" alt="Profile Picture" style="width: 120px; border-radius: 50%; margin-bottom: 15px;" />
-
     <p><strong>Name:</strong> <span id="emp-name"></span></p>
     <p><strong>E-CODE:</strong> <span id="emp-id"></span></p>
     <p><strong>DOB:</strong> <span id="emp-dob"></span></p>
@@ -111,24 +109,31 @@
       document.getElementById("emp-designation").textContent = updatedEmp.designation;
       document.getElementById("emp-team").textContent = updatedEmp.team;
       document.getElementById("emp-grade").textContent = updatedEmp.grade;
-      const imgUrl = updatedEmp.profileImage && updatedEmp.profileImage.trim() !== "" ? updatedEmp.profileImage : "https://via.placeholder.com/120";
-      document.getElementById("profile-pic").src = imgUrl;
 
-      // Leave summary
-      const summary = JSON.parse(localStorage.getItem("leaveSummary_" + updatedEmp.employee_id)) || {};
-      document.getElementById("pl-count").textContent = summary.PL ?? 0;
-      document.getElementById("cl-count").textContent = summary.CL ?? 0;
-      document.getElementById("sl-count").textContent = summary.SL ?? 0;
-      document.getElementById("el-count").textContent = summary.EL ?? 0;
 
-      // Leave calendar
-      const savedEvents = JSON.parse(localStorage.getItem("leaveEvents_" + updatedEmp.employee_id)) || [];
+      // ✅ Fetch leave summary from backend
+      const sumRes = await fetch(`https://employee-login-backend-vlfa.onrender.com/api/leaves/summary/${updatedEmp.employee_id}`);
+      if (!sumRes.ok) throw new Error("Failed to fetch leave summary");
+
+      const summary = await sumRes.json();
+      document.getElementById("pl-count").textContent = summary.pl ?? 0;
+      document.getElementById("cl-count").textContent = summary.cl ?? 0;
+      document.getElementById("sl-count").textContent = summary.sl ?? 0;
+      document.getElementById("el-count").textContent = summary.el ?? 0;
+
+
+ // ✅ Fetch leave events from backend
+      const evRes = await fetch(`https://employee-login-backend-vlfa.onrender.com/api/leave-events/${updatedEmp.employee_id}`);
+      if (!evRes.ok) throw new Error("Failed to fetch leave events");
+
+      const leaveEvents = await evRes.json();
       const calendar = new FullCalendar.Calendar(document.getElementById("calendar"), {
         initialView: 'dayGridMonth',
         height: 'auto',
-        events: savedEvents
+        events: leaveEvents
       });
       calendar.render();
+
 
       // Event list (fetch from DB)
       const listContainer = document.querySelector("#eventListBox .event-list");
