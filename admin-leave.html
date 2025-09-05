@@ -201,12 +201,14 @@
             };
           
             if (selectedDate && leaveType) {
-              const payload = {
-                employee_id: empId,
-                date: selectedDate,
-                leave_type: leaveType,           // backend expects this
-                color: colorMap[leaveType]
-              };
+            const payload = {
+              employee_id: empId,
+              start_date: selectedDate,
+              end_date: selectedDate,   // single-day leave for now
+              leave_type: leaveType,
+              color: colorMap[leaveType]
+            };
+
           
               fetch('https://employee-login-backend-vlfa.onrender.com/leave-events', {
                 method: 'POST',
@@ -225,10 +227,22 @@
                   start: selectedDate,
                   color: colorMap[leaveType]
                 });
+
+                // update leave summary in backend
+                fetch(`https://employee-login-backend-vlfa.onrender.com/leave-summary/${empId}`, {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ leave_type: leaveType })
+                })
+                .then(res => res.json())
+                .then(() => console.log("Leave summary updated"))
+                .catch(err => console.error("Error updating summary:", err));
+
                 modal.style.display = 'none';
                 selectedDate = null;
               })
               .catch(err => console.error('Error saving leave:', err));
+
             }
           };
 
