@@ -1,401 +1,120 @@
-require('dotenv').config();
-// server.js
-
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
-const { createClient } = require('@supabase/supabase-js');
-const multer = require('multer');
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-// CORS (allow your deployed frontend + local dev)
-const FRONTENDS = [
-  'https://employee-login-frontend.onrender.com',
-  'http://localhost:5500',
-  'http://127.0.0.1:5500'
-];
-
-const corsOptions = {
-  origin: function (origin, cb) {
-    if (!origin) return cb(null, true); // allow non-browser clients
-    if (FRONTENDS.includes(origin)) return cb(null, true);
-    return cb(null, false);
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: false,
-  maxAge: 86400
-};
-
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
-
-// Simple log to confirm requests arrive
-app.use((req, res, next) => {
-  if (req.path.startsWith('/api/documents')) {
-    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
-  }
-  next();
-});
-
-app.use(bodyParser.json());
-
-// Upload route
-const upload = multer({ dest: 'tmp/' }); // store temporarily before upload to Drive
-
-
-/* -------------------------
-   Employees endpoints
-   ------------------------- */
-
-// GET all employees
-app.get('/employees', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('employees')
-      .select('*')
-      .order('id', { ascending: true });
-
-    if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    console.error('GET /employees error:', err.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-// Create new employee
-app.post('/employees', async (req, res) => {
-  try {
-    const {
-      employee_id,
-      name,
-      designation,
-      dob,
-      joining_date,
-      payroll_name,
-      team,
-      grade,
-      password
-    } = req.body;
-
-    const { data, error } = await supabase
-      .from('employees')
-      .insert([{
-        employee_id,
-        name,
-        designation,
-        dob,
-        joining_date,
-        payroll_name,
-        team,
-        grade,
-        password
-      }])
-      .select()
-      .single();
-
-    if (error) throw error;
-    res.status(201).json(data);
-  } catch (err) {
-    console.error('POST /employees error:', err.message);
-    res.status(500).json({ error: 'Server error' });
-  }
-});
-
-
-/* -------------------------
-   Extra API
-   ------------------------- */
-
-// Health check
-app.get('/', (req, res) => res.send('OK'));
-
-
-/* -------------------------
-   Auth endpoints
-   ------------------------- */
-
-app.post("/admin-login", async (req, res) => {
-  const { username, password } = req.body;
-
-  try {
-    const { data: admin, error } = await supabase
-      .from("admin")
-      .select("*")
-      .eq("username", username)
-      .single();
-
-    if (error || !admin) {
-      return res.json({ success: false, message: "Invalid username or password" });
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Employee Login</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #002244;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+      display: flex;
     }
 
-    if (admin.password !== password) {
-      return res.json({ success: false, message: "Invalid username or password" });
+    .left-image {
+      flex: 1;
+      background: url('left.jpg') no-repeat center center;
+      background-size: cover;
     }
 
-    return res.json({ success: true, admin });
-  } catch (err) {
-    console.error("Admin login error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-app.post("/login", async (req, res) => {
-  const { employee_id, password } = req.body;
-
-  try {
-    const { data: employee, error } = await supabase
-      .from("employees")
-      .select("*")
-      .eq("employee_id", employee_id)
-      .single();
-
-    if (error || !employee) {
-      return res.json({ success: false, message: "Employee not found" });
+    .login-box {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    if ((employee.password || "").trim() !== (password || "").trim()) {
-      return res.json({ success: false, message: "Incorrect password" });
+    .login-form {
+      background-color: #e0f0ff;
+      padding: 40px;
+      border-radius: 20px;
+      width: 350px;
     }
 
-
-    return res.json({ success: true, employee });
-  } catch (err) {
-    console.error("Employee login error:", err);
-    return res.status(500).json({ success: false, message: "Server error" });
-  }
-});
-
-
-/* -------------------------
-   Employee Data API
-   ------------------------- */
-
-// GET employee by employee_id
-app.get("/api/employee/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const { data: employee, error } = await supabase
-      .from("employees")
-      .select("*")
-      .eq("employee_id", id)
-      .single();
-
-    if (error || !employee) {
-      return res.status(404).json({ error: "Employee not found" });
+    .login-form h2 {
+      margin-bottom: 20px;
+      color: #002244;
     }
 
-    res.json(employee);
-  } catch (err) {
-    console.error("GET /api/employee/:id error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-// GET documents for employee
-app.get("/api/documents/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const { data: docs, error } = await supabase
-      .from("documents")
-      .select("*")
-      .eq("employee_id", id);
-
-    if (error) throw error;
-    res.json(docs);
-  } catch (err) {
-    console.error("GET /api/documents/:id error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-// ✅ Get leave summary for an employee (fixed)
-app.get("/api/leaves/summary/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const { data, error } = await supabase
-      .from("leave_summary")
-      .select("pl, cl, sl, el")
-      .eq("employee_id", id)
-      .single(); // force one row
-
-    if (error && error.code === "PGRST116") {
-      // No row found → return defaults
-      return res.json({ pl: 0, cl: 0, sl: 0, el: 0 });
-    }
-    if (error) throw error;
-
-    res.json(data);
-  } catch (err) {
-    console.error("GET /api/leaves/summary error:", err.message);
-    res.status(500).json({ error: "Failed to fetch leave summary" });
-  }
-});
-
-
-// Get leave events for an employee
-app.get("/api/leave-events/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const { data, error } = await supabase
-      .from("leave_events")
-      .select("employee_id, leave_type, start_date, end_date, color")
-      .eq("employee_id", id);
-
-    if (error) throw error;
-
-    const events = data.map(ev => ({
-      title: ev.leave_type,
-      start: ev.start_date,
-      end: ev.end_date,
-      color: ev.color || "#f39c12"
-    }));
-
-    res.json(events);
-  } catch (err) {
-    console.error("GET /api/leave-events/:id error:", err.message);
-    res.status(500).json({ error: "Failed to fetch leave events" });
-  }
-});
-
-
-/* -------------------------
-   Events API
-   ------------------------- */
-
-// Get all events
-app.get("/api/events", async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .order("date", { ascending: true });
-
-    if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    console.error("GET /api/events error:", err.message);
-    res.status(500).json({ error: "Failed to fetch events" });
-  }
-});
-
-// Add new event
-app.post("/api/events", async (req, res) => {
-  const { title, date, description, event_type } = req.body;  // ✅ include event_type
-  try {
-    const { data, error } = await supabase
-      .from("events")
-      .insert([{ title, date, description, event_type }])  // ✅ insert event_type too
-      .select()
-      .single();
-
-    if (error) throw error;
-    res.status(201).json(data);
-  } catch (err) {
-    console.error("POST /api/events error:", err.message);
-    res.status(500).json({ error: "Failed to add event" });
-  }
-});
-
-
-app.delete("/api/events/:id", async (req, res) => {
-  const { id } = req.params;
-  try {
-    const { error } = await supabase.from("events").delete().eq("id", id);
-    if (error) throw error;
-    res.json({ success: true });
-  } catch (err) {
-    console.error("DELETE /api/events/:id error:", err.message);
-    res.status(500).json({ success: false, message: "Failed to delete event" });
-  }
-});
-
-
-
-app.put("/admin/password", async (req, res) => {
-  const { newPassword } = req.body;
-  try {
-    // Assuming single admin for now
-    const { data, error } = await supabase
-      .from("admin")
-      .update({ password: newPassword })
-      .eq("username", "admin")
-      .select()
-      .single();
-
-    if (error) throw error;
-    res.json({ success: true });
-  } catch (err) {
-    console.error("PUT /admin/password error:", err.message);
-    res.status(500).json({ success: false, message: "Failed to update password" });
-  }
-});
-
-
-
-
-/* -------------------------
-   Leave Events (Admin Calendar)
-   ------------------------- */
-
-// POST new leave event
-app.post("/api/leave-events", async (req, res) => {
-  const { employee_id, start_date, end_date, leave_type, color } = req.body;
-
-  try {
-    const { data: event, error } = await supabase
-      .from("leave_events")
-      .insert([{ employee_id, start_date, end_date, leave_type, color }])
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    const col = leave_type.toLowerCase();
-    if (["pl", "cl", "sl", "el"].includes(col)) {
-      await supabase.rpc("increment_leave_count", {
-        emp_id: employee_id,
-        leave_col: col
-      });
+    .login-form input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
     }
 
-    res.status(201).json(event);
-  } catch (err) {
-    console.error("POST /api/leave-events error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
+    .login-form button {
+      width: 100%;
+      padding: 10px;
+      background-color: #002244;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
 
-// ✅ Update leave summary for an employee
-app.put("/api/leaves/summary/:id", async (req, res) => {
-  const { id } = req.params;
-  const { pl, cl, sl, el } = req.body;
+    #error-msg {
+      color: red;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="left-image"></div>
 
-  try {
-    const { data, error } = await supabase
-      .from("leave_summary")
-      .upsert([{ employee_id: id, pl, cl, sl, el }], { onConflict: ["employee_id"] })
-      .select()
-      .single();
+  <div class="login-box">
+    <form class="login-form" id="loginForm">
+      <h2>Employee Login</h2>
+      <div id="error-msg"></div>
+      <input type="text" name="id" placeholder="Employee ID" required />
+      <input type="password" name="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+      <button type="button" onclick="window.location.href='admin-login.html'"
+        style="padding: 10px 20px; border-radius: 10px; background-color: #688db3; color: white; border: none; cursor: pointer; font-size: 14px; margin-top: 10px;">
+        Admin Login
+      </button>
+    </form>
+  </div>
 
-    if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    console.error("PUT /api/leaves/summary error:", err.message);
-    res.status(500).json({ error: "Failed to update leave summary" });
-  }
-});
+ <script>
+    const form = document.getElementById("loginForm");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const employee_id = form.querySelector('input[name="id"]').value;
+      const password = form.querySelector('input[name="password"]').value;
+
+      try {
+        const response = await fetch("https://employee-login-backend-vlfa.onrender.com/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ employee_id, password }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          localStorage.setItem("employee", JSON.stringify(data.employee));
+          window.location.href = "dashboard.html";
+        } else {
+          document.getElementById("error-msg").textContent =
+            data.message || "Login failed";
+        }
+      } catch (err) {
+        console.error("Login error:", err);
+        document.getElementById("error-msg").textContent =
+          "Server error. Please try again later.";
+      }
+    });
+
+  </script>
 
 
-/* Start server */
-app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
-});
+</body>
+</html>
+
