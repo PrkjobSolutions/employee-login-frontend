@@ -390,32 +390,89 @@
 
 
 
-  <script>
-    if (localStorage.getItem("adminLoggedIn") !== "true") {
-        window.location.href = "admin-login.html";
+<script>
+const API_BASE = "https://employee-login-backend-vlfa.onrender.com";
+const employeeSelect = document.getElementById("employee-select");
+const saveBtn = document.getElementById("saveLeaveSummary");
+
+// 1️⃣ Fetch employees and populate dropdown
+async function loadEmployees() {
+  try {
+    const res = await fetch(`${API_BASE}/employees`);
+    const data = await res.json();
+
+    employeeSelect.innerHTML = "";
+
+    data.forEach(emp => {
+      const option = document.createElement("option");
+      option.value = emp.id;
+      option.setAttribute("data-emp-code", emp.employee_id);
+      option.textContent = emp.name;
+      employeeSelect.appendChild(option);
+    });
+
+    // Automatically load leave summary for first employee
+    if (data.length > 0) {
+      const firstEmpId = employeeSelect.options[0].getAttribute("data-emp-code");
+      loadLeaveSummary(firstEmpId);
     }
+  } catch (err) {
+    console.error("Error fetching employees:", err);
+    alert("❌ Failed to load employees");
+  }
+}
 
-    function logout() {
-        localStorage.removeItem("adminLoggedIn");
-        window.location.href = "admin-login.html";
-    }
+// 2️⃣ Load leave summary for selected employee
+async function loadLeaveSummary(empId) {
+  try {
+    const res = await fetch(`${API_BASE}/api/leaves/summary/${empId}`);
+    const data = await res.json();
 
-    const saveBtn = document.getElementById("saveLeaveSummary");
-    const employeeSelect = document.getElementById("employee-select");
+    document.getElementById("pl").value = data.pl || 0;
+    document.getElementById("cl").value = data.cl || 0;
+    document.getElementById("sl").value = data.sl || 0;
+    document.getElementById("el").value = data.el || 0;
+  } catch (err) {
+    console.error("Error loading leave summary:", err);
+    alert("❌ Failed to load leave summary");
+  }
+}
 
-    saveBtn.onclick = function () {
-      const empId = employeeSelect.options[employeeSelect.selectedIndex].getAttribute("data-emp-code");
-      const updated = {
-        PL: parseInt(document.getElementById("pl").value),
-        CL: parseInt(document.getElementById("cl").value),
-        SL: parseInt(document.getElementById("sl").value),
-        EL: parseInt(document.getElementById("el").value)
-      };
+// 3️⃣ Update leave summary when employee selection changes
+employeeSelect.addEventListener("change", () => {
+  const empId = employeeSelect.options[employeeSelect.selectedIndex].getAttribute("data-emp-code");
+  loadLeaveSummary(empId);
+});
 
-      localStorage.setItem("leaveSummary_" + empId, JSON.stringify(updated));
-      alert("Leave summary saved for Employee " + empId);
-    };
-  </script>
+// 4️⃣ Save leave summary
+saveBtn.addEventListener("click", async () => {
+  const empId = employeeSelect.options[employeeSelect.selectedIndex].getAttribute("data-emp-code");
+  const payload = {
+    pl: parseInt(document.getElementById("pl").value) || 0,
+    cl: parseInt(document.getElementById("cl").value) || 0,
+    sl: parseInt(document.getElementById("sl").value) || 0,
+    el: parseInt(document.getElementById("el").value) || 0
+  };
+
+  try {
+    const res = await fetch(`${API_BASE}/api/leaves/summary/${empId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    alert(`✅ Leave summary updated for Employee ${empId}`);
+  } catch (err) {
+    console.error("Error saving leave summary:", err);
+    alert("❌ Failed to save leave summary");
+  }
+});
+
+// Initialize
+document.addEventListener("DOMContentLoaded", loadEmployees);
+</script>
+
  <script>
    console.log("✅ saveDocuments() function called");
     async function saveDocuments() {
