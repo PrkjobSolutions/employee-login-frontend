@@ -537,7 +537,8 @@ pendingSelect.addEventListener("change", async () => {
   const empId = pendingSelect.options[pendingSelect.selectedIndex].getAttribute("data-emp-code");
 
   try {
-    const res = await fetch(`${API_BASE}/pending-docs/${empId}`);
+    const res = await fetch(`${API_BASE}/api/pending-docs/${empId}`);
+
     
     if (!res.ok) throw new Error(`Status ${res.status}`);
     
@@ -556,7 +557,7 @@ async function savePendingDocs() {
   const message = document.getElementById("pending-doc-text").value.trim();
 
   try {
-    const res = await fetch(`${API_BASE}/pending-docs`, {
+    const res = await fetch(`${API_BASE}/api/pending-docs`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ employee_id: empId, notes: message })
