@@ -400,8 +400,7 @@ const saveBtn = document.getElementById("saveLeaveSummary");
 // 1️⃣ Fetch employees and populate dropdowns
 async function loadEmployees() {
   try {
-    const res = await fetch(`${API_BASE}/api
-    /employees`);
+   const res = await fetch(`${API_BASE}/api/employees`);
     const data = await res.json();
 
     employeeSelect.innerHTML = "";
