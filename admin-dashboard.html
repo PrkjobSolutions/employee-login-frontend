@@ -400,7 +400,7 @@ const saveBtn = document.getElementById("saveLeaveSummary");
 // 1️⃣ Fetch employees and populate dropdowns
 async function loadEmployees() {
   try {
-    const res = await fetch(`${API_BASE}/api/employees`);
+    const res = await fetch(`${API_BASE}/employees`);
     const data = await res.json();
 
     employeeSelect.innerHTML = "";
@@ -590,8 +590,7 @@ document.getElementById("save-admin-password").addEventListener("click", async (
   }
 
   try {
-    const response = await fetch(`${API_BASE}/api/admin/password`, {
-      method: "PUT",
+    const response = await fetch(`${API_BASE}/admin/password`, { method: 'PUT',
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ newPassword }),
     });
