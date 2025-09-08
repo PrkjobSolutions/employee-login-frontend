@@ -210,11 +210,12 @@
             };
 
           
-              fetch('https://employee-login-backend-vlfa.onrender.com/leave-events', {
+              fetch('https://employee-login-backend-vlfa.onrender.com/api/leave-events', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
               })
+
               .then(res => {
                 if (!res.ok) throw new Error(`Server error: ${res.status}`);
                 return res.json();               // { id: ... }
