@@ -534,7 +534,7 @@ async function saveDocuments() {
 
 // 1️⃣ Fetch and display pending docs when employee is selected
 pendingSelect.addEventListener("change", async () => {
-  const empId = pendingSelect.options[pendingSelect.selectedIndex].getAttribute("data-emp-code");
+ const empId = pendingSelect.value; // <-- this gives the employee_id directly
 
   try {
     const res = await fetch(`${API_BASE}/api/pending-docs/${empId}`);
@@ -553,7 +553,7 @@ pendingSelect.addEventListener("change", async () => {
 
 // 2️⃣ Save pending docs (or clear if empty)
 async function savePendingDocs() {
-  const empId = pendingSelect.options[pendingSelect.selectedIndex].getAttribute("data-emp-code");
+  const empId = pendingSelect.value; // <-- this gives the employee_id directly
   const message = document.getElementById("pending-doc-text").value.trim();
 
   try {
