@@ -140,7 +140,7 @@
       listContainer.innerHTML = "";
       
       try {
-        const evRes = await fetch("https://employee-login-backend-vlfa.onrender.com/events");
+        const evRes = await fetch("https://employee-login-backend-vlfa.onrender.com/api/events");
         if (!evRes.ok) throw new Error("Failed to fetch events");
       
         const events = await evRes.json();
