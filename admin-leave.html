@@ -259,7 +259,7 @@
       };
 
       // Fetch employee list from backend
-      fetch("https://employee-login-backend-vlfa.onrender.com/employees")
+      fetch("https://employee-login-backend-vlfa.onrender.com/api/employees")
         .then(response => response.json())
         .then(data => {
           employeeSelect.innerHTML = ""; // Clear default
