@@ -532,15 +532,28 @@ async function saveDocuments() {
   }
 }
 
-// Save Pending Docs to backend
+// 1️⃣ Fetch and display pending docs when employee is selected
+pendingSelect.addEventListener("change", async () => {
+  const empId = pendingSelect.options[pendingSelect.selectedIndex].getAttribute("data-emp-code");
+
+  try {
+    const res = await fetch(`${API_BASE}/pending-docs/${empId}`);
+    
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    
+    const data = await res.json();
+    // If no notes yet, show empty
+    document.getElementById("pending-doc-text").value = data.notes || "";
+  } catch (err) {
+    console.error("Error loading pending docs:", err);
+    document.getElementById("pending-doc-text").value = "";
+  }
+});
+
+// 2️⃣ Save pending docs (or clear if empty)
 async function savePendingDocs() {
   const empId = pendingSelect.options[pendingSelect.selectedIndex].getAttribute("data-emp-code");
   const message = document.getElementById("pending-doc-text").value.trim();
-
-  if (!message) {
-    alert("Please enter pending document note.");
-    return;
-  }
 
   try {
     const res = await fetch(`${API_BASE}/pending-docs`, {
@@ -551,8 +564,12 @@ async function savePendingDocs() {
 
     if (!res.ok) throw new Error(`Status ${res.status}`);
 
-    alert("✅ Pending documents saved for employee " + empId);
-    document.getElementById("pending-doc-text").value = "";
+    if (message) {
+      alert("✅ Pending documents saved for employee " + empId);
+    } else {
+      alert("✅ Pending documents cleared for employee " + empId);
+    }
+    
   } catch (err) {
     console.error("Error saving pending docs:", err);
     alert("❌ Failed to save pending docs");
