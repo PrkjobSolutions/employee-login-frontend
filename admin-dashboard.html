@@ -1,620 +1,407 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin Dashboard</title>
-  <link rel="stylesheet" href="style.css">
-<!-- Select2 CSS -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+require('dotenv').config();
+// server.js
 
-<!-- jQuery (required by Select2) -->
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const { createClient } = require('@supabase/supabase-js');
+const multer = require('multer');
 
-<!-- Select2 JS -->
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_ROLE_KEY
+);
 
-<style>
-  body {
-    font-family: 'Segoe UI', sans-serif;
-    background-color: #f2f4f8;
-    margin: 0;
-    padding: 0;
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// CORS (allow your deployed frontend + local dev)
+const FRONTENDS = [
+  'https://employee-login-frontend.onrender.com',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500'
+];
+
+const corsOptions = {
+  origin: function (origin, cb) {
+    if (!origin) return cb(null, true); // allow non-browser clients
+    if (FRONTENDS.includes(origin)) return cb(null, true);
+    return cb(null, false);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: false,
+  maxAge: 86400
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
+// Simple log to confirm requests arrive
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/documents')) {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   }
-
-  .header {
-    background-color: #0a1f47;
-    color: white;
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-  }
-
-  .container {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
-    padding: 30px;
-  }
-
-  .section {
-    background-color: white;
-    padding: 25px;
-    border-radius: 16px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-    transition: transform 0.2s ease-in-out;
-  }
-
-  .section:hover {
-    transform: translateY(-3px);
-  }
-
-  .section h2 {
-    margin-top: 0;
-    color: #333;
-    border-bottom: 2px solid #e0e0e0;
-    padding-bottom: 10px;
-    margin-bottom: 20px;
-  }
-
-  .section input[type="text"],
-  .section input[type="number"],
-  .section input[type="date"],
-  .section input[type="password"],
-  .section textarea,
-  .section select {
-    width: 100%;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    margin-bottom: 15px;
-    transition: 0.2s border-color ease;
-  }
-
-  .section input:focus,
-  .section select:focus,
-  .section textarea:focus {
-    outline: none;
-    border-color: #1e1d6b;
-    box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.1);
-  }
-
-  .section button {
-    padding: 10px 20px;
-    background-color: #74adbb;
-    color: white;
-    border: none;
-    border-radius: 25px;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    font-weight: 500;
-  }
-
-  .section button:hover {
-    background-color: #429fb6;
-  }
-
-  #toggle-password-btn {
-    background-color: #74adbb;
-  }
-
-  #toggle-password-btn:hover {
-    background-color: #74adbb;
-  }
-
-  #save-admin-password {
-    background-color: #43a047;
-  }
-
-  #save-admin-password:hover {
-    background-color: #388e3c;
-  }
-
-  #edit-headcount-btn {
-    background-color: #566483;
-    color: white;
-  }
-
-  #edit-headcount-btn:hover {
-    background-color: #647eb8;
-  }
-
-  #eventList li {
-    background-color: #e8f0fe;
-    padding: 8px 12px;
-    border-radius: 10px;
-    margin-bottom: 8px;
-    color: #333;
-  }
-
-  label {
-    font-weight: 500;
-  }
-
-  .select2-container--default .select2-selection--single {
-    height: 40px;
-    border-radius: 10px;
-    border-color: #ccc;
-    padding: 6px 12px;
-  }
-
-  .select2-selection__rendered {
-    line-height: 26px;
-  }
-
-  .select2-selection__arrow {
-    height: 36px;
-  }
-
-  #pending-doc-text {
-    width: 100%;
-    max-width: 500px;
-    padding: 10px;
-    border-radius: 10px;
-    border: 1px solid #ccc;
-    font-size: 14px;
-    resize: vertical;
-    box-sizing: border-box; /* 🔑 This keeps padding from making it overflow */
-    margin-right: auto;     /* Helps it stay aligned and not push to edge */
-  }
-
-
-</style>
-
-</head>
-<body>
-    <button onclick="logout()" style="position: absolute; top: 20px; right: 20px; padding: 8px 12px; background-color: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer;">
-    Logout
-    </button>
-
-  <div class="header">
-    <h1>Admin Dashboard</h1>
-  </div>
-
-  <div class="container">
-    <div class="section">
-      <h2>Welcome, Aayushi </h2>
-      <p>This is your dashboard to manage employee information.</p>
-
-      <div id="headcount-box" style="margin-top: 10px;">
-        <strong>Total Headcount:</strong>
-        <span id="headcount-value">--</span>
-        <button id="edit-headcount-btn" style="margin-left: 10px; border-radius: 25px;">Edit</button>
-      </div>
-        <button onclick="window.location.href='admin-leave.html'" style="margin-top: 10px; border-radius: 25px;">
-          🗓️ Go to Leave Calendar
-        </button>
-        <button onclick="window.location.href='admin-employee-panel.html'" style="margin-top: 10px; border-radius: 25px; margin-left: 10px;">
-          ➕ Add Employee Panel
-        </button>
-
-        <button id="toggle-password-btn" style="margin-top: 10px; border-radius: 25px; margin-left: 10px;">
-          🔒 Change Password
-        </button>
-
-       <div id="change-password-box" style="display: none; margin-top: 10px;">
-          <input type="password" id="new-admin-password" placeholder="Enter new password" style="padding: 6px; border-radius: 10px; border: 1px solid #ccc;" />
-          <br><br>
-          <label>
-            <input type="checkbox" id="toggle-pass-visibility" />
-            Show Password
-          </label>
-          <br><br>
-          <button id="save-admin-password" style="margin-left: 0; border-radius: 10px;">Save</button>
-        </div>
-
-
-
-
-    </div>
-    
-
-    <div class="section">
-      <h2>Leave Summary Editor</h2>
-      <label for="employee-select">Select Employee:</label>
-      <select id="employee-select" class="select2">
-        <option disabled selected>Loading employees...</option>
-      </select>
-
-      <br><br>
-
-      <label>PL:</label> <input type="number" id="pl" value="0"><br>
-      <label>CL:</label> <input type="number" id="cl" value="0"><br>
-      <label>SL:</label> <input type="number" id="sl" value="0"><br>
-      <label>EL:</label> <input type="number" id="el" value="0"><br>
-
-      <button id="saveLeaveSummary" style="border-radius: 25px;">Save Summary</button>
-    </div>
-    <div class="section">
-      <h2>Upload Employee Documents</h2>
-      <label for="doc-employee"><strong>Select Employee:</strong></label>
-     <select id="doc-employee" class="select2">
-        <option disabled selected>Loading employees...</option>
-      </select>
-  
-      <br><br>
-  
-      <label>Offer Letter (PDF):</label><br>
-      <input type="file" id="offerLetter" accept="application/pdf"><br><br>
-  
-      <label>Salary Slip (PDF):</label><br>
-      <input type="file" id="salarySlip" accept="application/pdf"><br><br>
-  
-      <button onclick="saveDocuments()" style="border-radius: 25px;">Save Documents</button>
-    </div>
-
-  <div class="section">
-    <h2>Post Events / Birthdays</h2>
-    <label><strong>Event Name:</strong></label>
-    <input type="text" id="eventName" placeholder="e.g. John Doe / Team Outing"><br><br>
-
-    <label><strong>Date:</strong></label>
-    <input type="date" id="eventDate"><br><br>
-
-    <label><strong>Type:</strong></label>
-   <select id="eventType">
-    <option value="birthday">Birthday</option>
-    <option value="event">Event</option>
-    <option value="anniversary">Work Anniversary</option>
-  </select>
-<br><br>
-
-    <button onclick="saveEvent()" style="border-radius: 25px;">Post Event</button>
-
-    <hr>
-
-    <h3>Upcoming Events</h3>
-    <ul id="eventList" style="list-style-type:none; padding:0;"></ul>
-  </div>
-  <div class="section">
-    <h2>Document Pending Section</h2>
-
-    <label for="pending-employee"><strong>Select Employee:</strong></label>
-    <select id="pending-employee" class="select2">
-      <option disabled selected>Loading employees...</option>
-    </select>
-
-    <br><br>
-
-    <label for="pending-doc-text"><strong>Pending Documents:</strong></label><br>
-    <textarea id="pending-doc-text" rows="4" cols="50" placeholder="e.g. Aadhar card, PAN card, Degree Certificate..."></textarea>
-
-    <br><br>
-    <button onclick="savePendingDocs()" style="border-radius: 25px;">Save Pending Docs</button>
-  </div>
-  </div>
-
-
-<script>
-
-
-  async function loadEvents() {
-    const eventList = document.getElementById("eventList");
-    eventList.innerHTML = "Loading...";
-
-    try {
-      const res = await fetch(`${API_BASE}/api/events`);
-      const rows = await res.json();
-
-      eventList.innerHTML = "";
-
-      if (!rows || rows.length === 0) {
-        eventList.innerHTML = "<li>No events posted yet.</li>";
-        return;
-      }
-
-      rows.forEach(ev => {
-        // ev has: id, title, date, description, event_type
-        let label = "Event 🏢";
-        if (ev.event_type === "birthday") label = "Birthday 🎂";
-        else if (ev.event_type === "anniversary") label = "Work Anniversary 🎉";
-
-        const li = document.createElement("li");
-        li.innerHTML = `
-          <strong>${ev.title}</strong> – ${label} ${formatDate(ev.date)}
-          <button onclick="deleteEvent(${ev.id})"
-            style="margin-left: 10px; color: white; background: red; border: none; border-radius: 4px; padding: 3px 6px; cursor: pointer;">
-            ❌
-          </button>
-        `;
-        eventList.appendChild(li);
-      });
-    } catch (err) {
-      console.error("Error loading events:", err);
-      eventList.innerHTML = "<li>Error loading events.</li>";
-    }
-  }
-
-  async function saveEvent() {
-    const name = document.getElementById("eventName").value.trim();
-    const date = document.getElementById("eventDate").value;
-    const type = document.getElementById("eventType").value;
-
-    if (!name || !date) {
-      alert("Please enter both event name and date.");
-      return;
-    }
-
-    try {
-      // DB columns: title, date, description, event_type
-      const payload = {
-        title: name,
-        date: date,
-        description: "",          // no description field in UI; send empty
-        event_type: type          // "birthday" or "event" (and "anniversary" if you use it)
-      };
-
-      const res = await fetch(`${API_BASE}/api/events`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!res.ok) {
-        throw new Error(`Save failed: ${res.status}`);
-      }
-
-      // Clear inputs (same behavior)
-      document.getElementById("eventName").value = "";
-      document.getElementById("eventDate").value = "";
-      document.getElementById("eventType").value = "birthday";
-
-      // Reload list from DB
-      loadEvents();
-    } catch (err) {
-      console.error("Error saving event:", err);
-      alert("Error saving event. See console for details.");
-    }
-  }
-
-  async function deleteEvent(id) {
-    try {
-      const res = await fetch(`${API_BASE}/api/events/${id}`, { method: "DELETE" });
-      if (!res.ok) {
-        throw new Error(`Delete failed: ${res.status}`);
-      }
-      loadEvents();
-    } catch (err) {
-      console.error("Error deleting event:", err);
-      alert("Error deleting event. See console for details.");
-    }
-  }
-
-  function formatDate(dateStr) {
-    const options = { day: "2-digit", month: "short", year: "numeric" };
-    return new Date(dateStr).toLocaleDateString("en-IN", options);
-  }
-
-  document.addEventListener("DOMContentLoaded", loadEvents);
-</script>
-
-
-<script>
-const API_BASE = "https://employee-login-backend-vlfa.onrender.com";
-
-const employeeSelect = document.getElementById("employee-select");
-const docEmpSelect = document.getElementById("doc-employee");
-const pendingSelect = document.getElementById("pending-employee");
-const saveBtn = document.getElementById("saveLeaveSummary");
-
-// 1️⃣ Fetch employees and populate dropdowns
-async function loadEmployees() {
-  try {
-   const res = await fetch(`${API_BASE}/api/employees`);
-    const data = await res.json();
-
-    employeeSelect.innerHTML = "";
-    docEmpSelect.innerHTML = "";
-    pendingSelect.innerHTML = "";
-
-    data.forEach(emp => {
-      const option1 = document.createElement("option");
-      option1.value = emp.id;
-      option1.setAttribute("data-emp-code", emp.employee_id);
-      option1.textContent = emp.name;
-
-      const option2 = option1.cloneNode(true);
-      const option3 = option1.cloneNode(true);
-
-      employeeSelect.appendChild(option1);
-      docEmpSelect.appendChild(option2);
-      pendingSelect.appendChild(option3);
-    });
-
-    // Auto load leave summary for first employee
-    if (data.length > 0) {
-      const firstEmpId = employeeSelect.options[0].getAttribute("data-emp-code");
-      loadLeaveSummary(firstEmpId);
-    }
-  } catch (err) {
-    console.error("Error fetching employees:", err);
-    alert("❌ Failed to load employees");
-  }
-}
-
-// 2️⃣ Load leave summary
-async function loadLeaveSummary(empId) {
-  try {
-    const res = await fetch(`${API_BASE}/api/leaves/summary/${empId}`);
-    const data = await res.json();
-
-    document.getElementById("pl").value = data.pl || 0;
-    document.getElementById("cl").value = data.cl || 0;
-    document.getElementById("sl").value = data.sl || 0;
-    document.getElementById("el").value = data.el || 0;
-  } catch (err) {
-    console.error("Error loading leave summary:", err);
-    alert("❌ Failed to load leave summary");
-  }
-}
-
-// 3️⃣ Change employee -> reload summary
-employeeSelect.addEventListener("change", () => {
-  const empId = employeeSelect.options[employeeSelect.selectedIndex].getAttribute("data-emp-code");
-  loadLeaveSummary(empId);
+  next();
 });
 
-// 4️⃣ Save leave summary
-saveBtn.addEventListener("click", async () => {
-  const empId = employeeSelect.options[employeeSelect.selectedIndex].getAttribute("data-emp-code");
-  const payload = {
-    pl: parseInt(document.getElementById("pl").value) || 0,
-    cl: parseInt(document.getElementById("cl").value) || 0,
-    sl: parseInt(document.getElementById("sl").value) || 0,
-    el: parseInt(document.getElementById("el").value) || 0
-  };
+app.use(bodyParser.json());
+
+// Upload route
+const upload = multer({ dest: 'tmp/' }); // store temporarily before upload to Drive
+
+
+/* -------------------------
+   Employees endpoints
+   ------------------------- */
+
+// GET all employees
+app.get('/api/employees', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('employees')
+      .select('*')
+      .order('id', { ascending: true });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error('GET /api/employees error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Create new employee
+app.post('/api/employees', async (req, res) => {
+  try {
+    const {
+      employee_id,
+      name,
+      designation,
+      dob,
+      joining_date,
+      payroll_name,
+      team,
+      grade,
+      password
+    } = req.body;
+
+    const { data, error } = await supabase
+      .from('employees')
+      .insert([{
+        employee_id,
+        name,
+        designation,
+        dob,
+        joining_date,
+        payroll_name,
+        team,
+        grade,
+        password
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (err) {
+    console.error('POST /api/employees error:', err.message);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+
+/* -------------------------
+   Extra API
+   ------------------------- */
+
+// Health check
+app.get('/', (req, res) => res.send('OK'));
+
+
+/* -------------------------
+   Auth endpoints
+   ------------------------- */
+
+app.post("/admin-login", async (req, res) => {
+  const { username, password } = req.body;
 
   try {
-    const res = await fetch(`${API_BASE}/api/leaves/summary/${empId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    const { data: admin, error } = await supabase
+      .from("admin")
+      .select("*")
+      .eq("username", username)
+      .single();
 
-    if (!res.ok) throw new Error(`Status ${res.status}`);
-    alert(`✅ Leave summary updated for Employee ${empId}`);
-  } catch (err) {
-    console.error("Error saving leave summary:", err);
-    alert("❌ Failed to save leave summary");
-  }
-});
-
-// 5️⃣ Save Documents
-async function saveDocuments() {
-  const empId = docEmpSelect.options[docEmpSelect.selectedIndex].getAttribute("data-emp-code");
-  const offerFile = document.getElementById("offerLetter").files[0];
-  const salaryFile = document.getElementById("salarySlip").files[0];
-
-  if (!offerFile || !salaryFile) {
-    alert("Please select both Offer Letter and Salary Slip.");
-    return;
-  }
-
-  try {
-    async function uploadFile(file) {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch(`${API_BASE}/api/documents/upload`, { method: "POST", body: form });
-
-      if (!res.ok) throw new Error(`Upload failed: ${res.status} - ${await res.text()}`);
-      return res.json();
+    if (error || !admin) {
+      return res.json({ success: false, message: "Invalid username or password" });
     }
 
-    const offerData = await uploadFile(offerFile);
-    const salaryData = await uploadFile(salaryFile);
+    if (admin.password !== password) {
+      return res.json({ success: false, message: "Invalid username or password" });
+    }
 
-    const docData = {
-      offerLetter: offerData.fileUrl,
-      salarySlip: salaryData.fileUrl
-    };
-
-    await fetch(`${API_BASE}/api/documents/${empId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(docData)
-    });
-
-    alert(`✅ Documents uploaded for Employee ${empId}`);
-    document.getElementById("offerLetter").value = "";
-    document.getElementById("salarySlip").value = "";
+    return res.json({ success: true, admin });
   } catch (err) {
-    console.error("Upload error:", err);
-    alert("❌ Failed to upload documents. Check console.");
+    console.error("Admin login error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
   }
-}
-
-// 6️⃣ Pending Docs
-function savePendingDocs() {
-  const empId = pendingSelect.value;
-  const message = document.getElementById("pending-doc-text").value.trim();
-
-  if (!message) {
-    alert("Please enter pending document note.");
-    return;
-  }
-
-  localStorage.setItem("pendingDocs_" + empId, message);
-  alert("✅ Pending documents saved for employee " + empId);
-  document.getElementById("pending-doc-text").value = "";
-}
-
-// 7️⃣ Headcount
-document.addEventListener("DOMContentLoaded", function () {
-  const headcountBox = document.getElementById("headcount-box");
-  let count = localStorage.getItem("totalHeadcount") || "0";
-  headcountBox.innerHTML = `
-    <strong>Total Headcount:</strong>
-    <span id="headcount-value">${count}</span>
-    <button id="edit-headcount-btn" style="margin-left: 10px;">Edit</button>
-  `;
-
-  function bindEdit() {
-    document.getElementById("edit-headcount-btn").addEventListener("click", function () {
-      headcountBox.innerHTML = `
-        <strong>Total Headcount:</strong>
-        <input type="number" id="headcount-input" value="${count}" style="width: 60px; margin-left: 5px;" />
-        <button id="update-headcount-btn" style="margin-left: 5px;">Update</button>
-      `;
-      document.getElementById("update-headcount-btn").addEventListener("click", function () {
-        count = document.getElementById("headcount-input").value;
-        localStorage.setItem("totalHeadcount", count);
-        headcountBox.innerHTML = `
-          <strong>Total Headcount:</strong>
-          <span id="headcount-value">${count}</span>
-          <button id="edit-headcount-btn" style="margin-left: 10px;">Edit</button>
-        `;
-        bindEdit();
-      });
-    });
-  }
-  bindEdit();
 });
 
-// 8️⃣ Admin Password Change
-document.getElementById("toggle-password-btn").addEventListener("click", function () {
-  const box = document.getElementById("change-password-box");
-  box.style.display = box.style.display === "none" ? "block" : "none";
+app.post("/login", async (req, res) => {
+  const { employee_id, password } = req.body;
+
+  try {
+    const { data: employee, error } = await supabase
+      .from("employees")
+      .select("*")
+      .eq("employee_id", employee_id)
+      .single();
+
+    if (error || !employee) {
+      return res.json({ success: false, message: "Employee not found" });
+    }
+
+    if ((employee.password || "").trim() !== (password || "").trim()) {
+      return res.json({ success: false, message: "Incorrect password" });
+    }
+
+
+    return res.json({ success: true, employee });
+  } catch (err) {
+    console.error("Employee login error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
 });
 
-document.getElementById("toggle-pass-visibility").addEventListener("change", function () {
-  const input = document.getElementById("new-admin-password");
-  input.type = this.checked ? "text" : "password";
+
+/* -------------------------
+   Employee Data API
+   ------------------------- */
+
+// GET employee by employee_id
+app.get("/api/employee/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { data: employee, error } = await supabase
+      .from("employees")
+      .select("*")
+      .eq("employee_id", id)
+      .single();
+
+    if (error || !employee) {
+      return res.status(404).json({ error: "Employee not found" });
+    }
+
+    res.json(employee);
+  } catch (err) {
+    console.error("GET /api/employee/:id error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
 });
 
-document.getElementById("save-admin-password").addEventListener("click", async () => {
-  const newPassword = document.getElementById("new-admin-password").value.trim();
+// GET documents for employee
+app.get("/api/documents/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { data: docs, error } = await supabase
+      .from("documents")
+      .select("*")
+      .eq("employee_id", id);
+
+    if (error) throw error;
+    res.json(docs);
+  } catch (err) {
+    console.error("GET /api/documents/:id error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ✅ Get leave summary for an employee (fixed)
+app.get("/api/leaves/summary/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { data, error } = await supabase
+      .from("leave_summary")
+      .select("pl, cl, sl, el")
+      .eq("employee_id", id)
+      .single(); // force one row
+
+    if (error && error.code === "PGRST116") {
+      // No row found → return defaults
+      return res.json({ pl: 0, cl: 0, sl: 0, el: 0 });
+    }
+    if (error) throw error;
+
+    res.json(data);
+  } catch (err) {
+    console.error("GET /api/leaves/summary error:", err.message);
+    res.status(500).json({ error: "Failed to fetch leave summary" });
+  }
+});
+
+
+// Get leave events for an employee
+app.get("/api/leave-events/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { data, error } = await supabase
+      .from("leave_events")
+      .select("employee_id, leave_type, start_date, end_date, color")
+      .eq("employee_id", id);
+
+    if (error) throw error;
+
+    const events = data.map(ev => ({
+      title: ev.leave_type,
+      start: ev.start_date,
+      end: ev.end_date,
+      color: ev.color || "#f39c12"
+    }));
+
+    res.json(events);
+  } catch (err) {
+    console.error("GET /api/leave-events/:id error:", err.message);
+    res.status(500).json({ error: "Failed to fetch leave events" });
+  }
+});
+
+
+/* -------------------------
+   Events API
+   ------------------------- */
+
+// Get all events
+app.get("/api/events", async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from("events")
+      .select("*")
+      .order("date", { ascending: true });
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error("GET /api/events error:", err.message);
+    res.status(500).json({ error: "Failed to fetch events" });
+  }
+});
+
+// Add new event
+app.post("/api/events", async (req, res) => {
+  const { title, date, description, event_type } = req.body;  // ✅ include event_type
+  try {
+    const { data, error } = await supabase
+      .from("events")
+      .insert([{ title, date, description, event_type }])  // ✅ insert event_type too
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.status(201).json(data);
+  } catch (err) {
+    console.error("POST /api/events error:", err.message);
+    res.status(500).json({ error: "Failed to add event" });
+  }
+});
+
+
+app.delete("/api/events/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { error } = await supabase.from("events").delete().eq("id", id);
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    console.error("DELETE /api/events/:id error:", err.message);
+    res.status(500).json({ success: false, message: "Failed to delete event" });
+  }
+});
+
+
+
+app.put("/admin/password", async (req, res) => {
+  const { newPassword } = req.body;
 
   if (!newPassword) {
-    alert("Please enter a new password.");
-    return;
+    return res.status(400).json({ success: false, message: "Password is required" });
   }
 
   try {
-    const response = await fetch(`${API_BASE}/admin/password`, { method: 'PUT',
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ newPassword }),
-    });
+    // Assuming single admin with id = 1
+    const { data, error } = await supabase
+      .from("admin")
+      .update({ password: newPassword })
+      .eq("id", 1)
+      .select()
+      .single();
 
-    const result = await response.json();
-    if (result.success) {
-      alert("✅ Password updated successfully!");
-      document.getElementById("new-admin-password").value = "";
-      document.getElementById("change-password-box").style.display = "none";
-    } else {
-      alert("❌ Failed to update password.");
-    }
-  } catch (error) {
-    console.error("Password update error:", error);
-    alert("Error updating password. See console.");
+    if (error) throw error;
+    res.json({ success: true });
+  } catch (err) {
+    console.error("PUT /admin/password error:", err.message);
+    res.status(500).json({ success: false, message: "Failed to update password" });
   }
 });
 
-// Initialize all
-document.addEventListener("DOMContentLoaded", loadEmployees);
-</script>
 
 
-  
-</body>
-</html>
 
+
+/* -------------------------
+   Leave Events (Admin Calendar)
+   ------------------------- */
+
+// POST new leave event
+app.post("/api/leave-events", async (req, res) => {
+  const { employee_id, start_date, end_date, leave_type, color } = req.body;
+
+  try {
+    const { data: event, error } = await supabase
+      .from("leave_events")
+      .insert([{ employee_id, start_date, end_date, leave_type, color }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    const col = leave_type.toLowerCase();
+    if (["pl", "cl", "sl", "el"].includes(col)) {
+      await supabase.rpc("increment_leave_count", {
+        emp_id: employee_id,
+        leave_col: col
+      });
+    }
+
+    res.status(201).json(event);
+  } catch (err) {
+    console.error("POST /api/leave-events error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ✅ Update leave summary for an employee
+app.put("/api/leaves/summary/:id", async (req, res) => {
+  const { id } = req.params;
+  const { pl, cl, sl, el } = req.body;
+
+  try {
+    const { data, error } = await supabase
+      .from("leave_summary")
+      .upsert([{ employee_id: id, pl, cl, sl, el }], { onConflict: ["employee_id"] })
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (err) {
+    console.error("PUT /api/leaves/summary error:", err.message);
+    res.status(500).json({ error: "Failed to update leave summary" });
+  }
+});
+
+
+/* Start server */
+app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
