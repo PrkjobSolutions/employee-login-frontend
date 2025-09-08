@@ -167,8 +167,18 @@
 
 
       // Pending documents
-      const pending = localStorage.getItem("pendingDocs_" + updatedEmp.employee_id);
-      document.getElementById("pendingDocView").textContent = pending || "No pending documents 🎉";
+    // Pending documents
+        try {
+          const pendingRes = await fetch(`${API_BASE}/api/pending-docs/${employeeId}`);
+          if (!pendingRes.ok) throw new Error("Failed to fetch pending documents");
+
+          const pendingData = await pendingRes.json();
+          document.getElementById("pendingDocView").textContent = pendingData.notes || "No pending documents 🎉";
+        } catch (err) {
+          console.error("Error fetching pending documents:", err);
+          document.getElementById("pendingDocView").textContent = "Failed to load pending documents";
+        }
+
 
       // Document buttons
       document.getElementById("offerBtn").onclick = () => {
