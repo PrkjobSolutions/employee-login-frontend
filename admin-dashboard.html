@@ -432,10 +432,12 @@ async function loadEmployees() {
   }
 }
 
-// 2️⃣ Load leave summary
+
+// Load leave summary from backend
 async function loadLeaveSummary(empId) {
   try {
-    const res = await fetch(`${API_BASE}/api/leaves/summary/${empId}`);
+    const res = await fetch(`${API_BASE}/leave-summary/${empId}`);
+    if (!res.ok) throw new Error(`Status ${res.status}`);
     const data = await res.json();
 
     document.getElementById("pl").value = data.pl || 0;
@@ -444,20 +446,25 @@ async function loadLeaveSummary(empId) {
     document.getElementById("el").value = data.el || 0;
   } catch (err) {
     console.error("Error loading leave summary:", err);
-    alert("❌ Failed to load leave summary");
+    document.getElementById("pl").value = 0;
+    document.getElementById("cl").value = 0;
+    document.getElementById("sl").value = 0;
+    document.getElementById("el").value = 0;
   }
 }
 
-// 3️⃣ Change employee -> reload summary
+// When employee changes, load their summary
 employeeSelect.addEventListener("change", () => {
   const empId = employeeSelect.options[employeeSelect.selectedIndex].getAttribute("data-emp-code");
   loadLeaveSummary(empId);
 });
 
-// 4️⃣ Save leave summary
+// Save leave summary to backend
 saveBtn.addEventListener("click", async () => {
   const empId = employeeSelect.options[employeeSelect.selectedIndex].getAttribute("data-emp-code");
+
   const payload = {
+    employee_id: empId,
     pl: parseInt(document.getElementById("pl").value) || 0,
     cl: parseInt(document.getElementById("cl").value) || 0,
     sl: parseInt(document.getElementById("sl").value) || 0,
@@ -465,19 +472,21 @@ saveBtn.addEventListener("click", async () => {
   };
 
   try {
-    const res = await fetch(`${API_BASE}/api/leaves/summary/${empId}`, {
-      method: "PUT",
+    const res = await fetch(`${API_BASE}/leave-summary`, {
+      method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
 
     if (!res.ok) throw new Error(`Status ${res.status}`);
-    alert(`✅ Leave summary updated for Employee ${empId}`);
+    alert(`✅ Leave summary saved for Employee ${empId}`);
   } catch (err) {
     console.error("Error saving leave summary:", err);
     alert("❌ Failed to save leave summary");
   }
 });
+
+
 
 // 5️⃣ Save Documents
 async function saveDocuments() {
