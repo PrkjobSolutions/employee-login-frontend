@@ -532,9 +532,9 @@ async function saveDocuments() {
   }
 }
 
-// 6️⃣ Pending Docs
-function savePendingDocs() {
-  const empId = pendingSelect.value;
+// Save Pending Docs to backend
+async function savePendingDocs() {
+  const empId = pendingSelect.options[pendingSelect.selectedIndex].getAttribute("data-emp-code");
   const message = document.getElementById("pending-doc-text").value.trim();
 
   if (!message) {
@@ -542,10 +542,23 @@ function savePendingDocs() {
     return;
   }
 
-  localStorage.setItem("pendingDocs_" + empId, message);
-  alert("✅ Pending documents saved for employee " + empId);
-  document.getElementById("pending-doc-text").value = "";
+  try {
+    const res = await fetch(`${API_BASE}/pending-docs`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ employee_id: empId, notes: message })
+    });
+
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+
+    alert("✅ Pending documents saved for employee " + empId);
+    document.getElementById("pending-doc-text").value = "";
+  } catch (err) {
+    console.error("Error saving pending docs:", err);
+    alert("❌ Failed to save pending docs");
+  }
 }
+
 
 // 7️⃣ Headcount
 document.addEventListener("DOMContentLoaded", function () {
