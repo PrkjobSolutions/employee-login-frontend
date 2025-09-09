@@ -409,10 +409,9 @@ async function loadEmployees() {
 
     data.forEach(emp => {
       const option1 = document.createElement("option");
-      option1.value = emp.employee_id;   // use employee_id as value
-      option1.setAttribute("data-emp-code", emp.id); // keep the numeric id if needed
+      option1.value = emp.id;
+      option1.setAttribute("data-emp-code", emp.employee_id);
       option1.textContent = emp.name;
-
 
       const option2 = option1.cloneNode(true);
       const option3 = option1.cloneNode(true);
@@ -423,18 +422,15 @@ async function loadEmployees() {
     });
 
     // Auto load leave summary for first employee
-    // Auto load leave summary for first employee
     if (data.length > 0) {
-      const firstEmpId = employeeSelect.options[0].value; // employee_id string
+      const firstEmpId = employeeSelect.options[0].getAttribute("data-emp-code");
       loadLeaveSummary(firstEmpId);
-    }
-
     }
   } catch (err) {
     console.error("Error fetching employees:", err);
     alert("❌ Failed to load employees");
   }
-
+}
 
 
 // Load leave summary from backend
