@@ -553,7 +553,7 @@ pendingSelect.addEventListener("change", async () => {
 
 // 2️⃣ Save pending docs (or clear if empty)
 async function savePendingDocs() {
-  const empId = pendingSelect.value; // <-- this gives the employee_id directly
+  const empId = pendingSelect.selectedOptions[0].getAttribute("data-emp-code");
   const message = document.getElementById("pending-doc-text").value.trim();
 
   try {
