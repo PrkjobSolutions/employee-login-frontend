@@ -494,34 +494,38 @@ async function saveDocuments() {
   const offerFile = document.getElementById("offerLetter").files[0];
   const salaryFile = document.getElementById("salarySlip").files[0];
 
-  if (!offerFile || !salaryFile) {
-    alert("Please select both Offer Letter and Salary Slip.");
+  if (!empId) {
+    alert("❌ Please select an employee.");
+    return;
+  }
+
+  if (!offerFile && !salaryFile) {
+    alert("Please select at least one document to upload.");
     return;
   }
 
   try {
-    async function uploadFile(file) {
+    // Upload Offer Letter if selected
+    if (offerFile) {
       const form = new FormData();
-      form.append("file", file);
-      const res = await fetch(`${API_BASE}/api/documents/upload`, { method: "POST", body: form });
+      form.append("employee_id", empId);
+      form.append("doc_type", "offerLetter");
+      form.append("file", offerFile);
 
-      if (!res.ok) throw new Error(`Upload failed: ${res.status} - ${await res.text()}`);
-      return res.json();
+      let res = await fetch(`${API_BASE}/api/upload-document`, { method: "POST", body: form });
+      if (!res.ok) throw new Error(await res.text());
     }
 
-    const offerData = await uploadFile(offerFile);
-    const salaryData = await uploadFile(salaryFile);
+    // Upload Salary Slip if selected
+    if (salaryFile) {
+      const form = new FormData();
+      form.append("employee_id", empId);
+      form.append("doc_type", "salarySlip");
+      form.append("file", salaryFile);
 
-    const docData = {
-      offerLetter: offerData.fileUrl,
-      salarySlip: salaryData.fileUrl
-    };
-
-    await fetch(`${API_BASE}/api/documents/${empId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(docData)
-    });
+      let res = await fetch(`${API_BASE}/api/upload-document`, { method: "POST", body: form });
+      if (!res.ok) throw new Error(await res.text());
+    }
 
     alert(`✅ Documents uploaded for Employee ${empId}`);
     document.getElementById("offerLetter").value = "";
@@ -531,6 +535,7 @@ async function saveDocuments() {
     alert("❌ Failed to upload documents. Check console.");
   }
 }
+
 
 // 1️⃣ Fetch and display pending docs when employee is selected
 pendingSelect.addEventListener("change", async () => {
@@ -648,6 +653,7 @@ document.getElementById("save-admin-password").addEventListener("click", async (
     alert("Error updating password. See console.");
   }
 });
+
 
 // Initialize all
 document.addEventListener("DOMContentLoaded", loadEmployees);
