@@ -167,8 +167,10 @@
 
 
       // Pending documents
-    // Pending documents
         try {
+          const API_BASE = "https://employee-login-backend-vlfa.onrender.com";
+          const employeeId = updatedEmp.employee_id;
+
           const pendingRes = await fetch(`${API_BASE}/api/pending-docs/${employeeId}`);
           if (!pendingRes.ok) throw new Error("Failed to fetch pending documents");
 
@@ -181,19 +183,17 @@
 
 
       // Document buttons
-      document.getElementById("offerBtn").onclick = () => {
-        const offer = employeeDocs.find(d => d.doc_type === "offerLetter");
-        if (!offer) return alert("No Offer Letter uploaded.");
-        const w = window.open();
-        w.document.write(`<iframe src="${offer.file_path}" width="100%" height="100%"></iframe>`);
-      };
-      
-      document.getElementById("salaryBtn").onclick = () => {
-        const salary = employeeDocs.find(d => d.doc_type === "salarySlip");
-        if (!salary) return alert("No Salary Slip uploaded.");
-        const w = window.open();
-        w.document.write(`<iframe src="${salary.file_path}" width="100%" height="100%"></iframe>`);
-      };
+    document.getElementById("offerBtn").onclick = () => {
+      const offer = employeeDocs.find(d => d.doc_type === "offerLetter");
+      if (!offer) return alert("No Offer Letter uploaded.");
+      window.open(offer.file_url, "_blank");
+    };
+
+    document.getElementById("salaryBtn").onclick = () => {
+      const salary = employeeDocs.find(d => d.doc_type === "salarySlip");
+      if (!salary) return alert("No Salary Slip uploaded.");
+      window.open(salary.file_url, "_blank");
+    };
 
 
       document.getElementById("policyBtn").onclick = () => {
@@ -252,25 +252,22 @@ async function loadEmployeeDocuments() {
       return;
     }
 
-    docs.forEach(doc => {
-      const fileUrl = doc.file_path.startsWith("http")
-        ? doc.file_path
-        : `${API_BASE}/${doc.file_path}`;
-
+   docs.forEach(doc => {
       const div = document.createElement("div");
       div.innerHTML = `
         <p><strong>${doc.doc_type}</strong></p>
-        <a href="${fileUrl}" target="_blank">View Document</a>
+        <a href="${doc.file_url}" target="_blank">View Document</a>
       `;
       docsContainer.appendChild(div);
     });
+
 
   } catch (err) {
     console.error("Error fetching documents:", err);
   }
 }
 
-</script> 
+</script>
 
 </body>
 </html>
